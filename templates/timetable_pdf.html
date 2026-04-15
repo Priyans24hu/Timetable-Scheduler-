@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>College Timetable - {{ batch_id }}</title>
+    <style>
+        /* PDF-Optimized FET-Style Timetable */
+        @page {
+            size: landscape;
+            margin: 10mm;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9px;
+            line-height: 1.2;
+            color: #000;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+        }
+        
+        .header-info {
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .timetable th {
+            background-color: #34495e;
+            color: white;
+            padding: 6px 4px;
+            text-align: center;
+            border: 1px solid #2c3e50;
+            font-weight: bold;
+            font-size: 9px;
+        }
+        
+        .timetable th.time-header {
+            width: 80px;
+            background-color: #2c3e50;
+        }
+        
+        .timetable th.day-header {
+            width: 18%;
+        }
+        
+        .timetable td {
+            border: 1px solid #7f8c8d;
+            padding: 3px;
+            vertical-align: top;
+            height: 50px;
+            background-color: #fff;
+        }
+        
+        .timetable td.time-slot {
+            background-color: #ecf0f1;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 8px;
+        }
+        
+        /* Entry Cell Styling */
+        .entry {
+            background-color: #e8f4f8;
+            border: 1px solid #3498db;
+            border-radius: 2px;
+            padding: 2px;
+            margin-bottom: 2px;
+            font-size: 8px;
+        }
+        
+        .entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .entry-section {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 7px;
+        }
+        
+        .entry-subject {
+            color: #2980b9;
+            font-weight: 600;
+        }
+        
+        .entry-faculty {
+            color: #27ae60;
+            font-size: 7px;
+        }
+        
+        .entry-room {
+            color: #c0392b;
+            font-size: 7px;
+        }
+        
+        /* Lab Entry Styling */
+        .entry.lab {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+        }
+        
+        /* Empty Cell */
+        .empty-cell {
+            background-color: #f8f9fa;
+            color: #bbb;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        /* Stats Section */
+        .stats {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        
+        .stats h3 {
+            margin: 0 0 8px 0;
+            font-size: 11px;
+            color: #2c3e50;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 7px;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* Page break for printing */
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏫 COLLEGE TIMETABLE</h1>
+        <div class="header-info">
+            Generated: {{ generated_at }} | Batch ID: {{ batch_id }}
+        </div>
+    </div>
+
+    <table class="timetable">
+        <thead>
+            <tr>
+                <th class="time-header">Time</th>
+                {% for day in timetable.days %}
+                    <th class="day-header">{{ day }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for time_slot in timetable.time_slots %}
+                <tr>
+                    <td class="time-slot">{{ time_slot }}</td>
+                    {% for day in timetable.days %}
+                        <td>
+                            {% if timetable.grid|get_item:time_slot|get_item:day %}
+                                {% for entry in timetable.grid|get_item:time_slot|get_item:day %}
+                                    <div class="entry {% if 'Lab' in entry.course.course_type %}lab{% endif %}">
+                                        <div class="entry-section">{{ entry.section.section_id }}</div>
+                                        <div class="entry-subject">{{ entry.course.course_name }}</div>
+                                        <div class="entry-faculty">{{ entry.instructor.name }}</div>
+                                        <div class="entry-room">📍 {{ entry.room.r_number }}</div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-cell">—</div>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if stats %}
+    <div class="stats">
+        <h3>📊 Generation Statistics</h3>
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-label">Entries</div>
+                <div class="stat-value">{{ stats.total_entries }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Sections</div>
+                <div class="stat-value">{{ stats.total_sections }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Courses</div>
+                <div class="stat-value">{{ stats.total_courses }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Faculty</div>
+                <div class="stat-value">{{ stats.total_faculty }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Rooms</div>
+                <div class="stat-value">{{ stats.total_rooms_used }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Fitness</div>
+                <div class="stat-value">{{ stats.fitness_score|floatformat:3 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Conflicts</div>
+                <div class="stat-value">{{ stats.conflicts }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Time</div>
+                <div class="stat-value">{{ stats.generation_time|floatformat:1 }}s</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

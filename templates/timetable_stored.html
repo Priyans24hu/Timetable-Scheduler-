@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<style>
+/* FET-Style Timetable Grid */
+.timetable-container {
+    margin: 20px;
+    overflow-x: auto;
+}
+
+.timetable-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.timetable-info {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.fet-timetable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+}
+
+.fet-timetable th {
+    background-color: #2c3e50;
+    color: white;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #34495e;
+    font-weight: bold;
+}
+
+.fet-timetable th.time-header {
+    width: 100px;
+    background-color: #34495e;
+}
+
+.fet-timetable th.day-header {
+    width: 16%;
+}
+
+.fet-timetable td {
+    border: 1px solid #bdc3c7;
+    padding: 4px;
+    vertical-align: top;
+    height: 60px;
+    background-color: #fff;
+}
+
+.fet-timetable td.time-slot {
+    background-color: #ecf0f1;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.fet-timetable tr:nth-child(even) td.time-slot {
+    background-color: #d5dbdb;
+}
+
+/* Entry Cell Styling */
+.timetable-entry {
+    background-color: #e8f4f8;
+    border: 1px solid #3498db;
+    border-radius: 3px;
+    padding: 3px;
+    margin-bottom: 3px;
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.timetable-entry:last-child {
+    margin-bottom: 0;
+}
+
+.entry-section {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 9px;
+}
+
+.entry-subject {
+    color: #2980b9;
+    font-weight: 600;
+}
+
+.entry-faculty {
+    color: #27ae60;
+}
+
+.entry-room {
+    color: #e74c3c;
+    font-size: 9px;
+}
+
+/* Lab Entry Styling */
+.timetable-entry.lab {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+}
+
+/* Multiple Entries Container */
+.entries-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Empty Cell */
+.empty-cell {
+    background-color: #f8f9fa;
+    color: #dee2e6;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Action Buttons */
+.timetable-actions {
+    margin: 20px;
+    text-align: center;
+}
+
+.timetable-actions .btn {
+    margin: 5px;
+    padding: 10px 20px;
+}
+
+/* Statistics Panel */
+.stats-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 20px;
+}
+
+.stats-panel h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 3px solid #3498db;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+</style>
+
+<div class="timetable-container">
+    <h2 class="timetable-title">📅 College Timetable - FET Style</h2>
+    <p class="timetable-info">
+        Generated on: {{ generated_at|default:"Now" }} | 
+        Batch ID: {{ batch_id|default:"Latest" }} | 
+        Total Entries: {{ total_entries }}
+    </p>
+
+    <div class="timetable-actions">
+        <a href="{% url 'timetable_pdf_batch' batch_id|default:'' %}" class="btn btn-primary">
+            📄 Export as PDF
+        </a>
+        <a href="{% url 'generation_history' %}" class="btn btn-secondary">
+            📚 Generation History
+        </a>
+        <a href="{% url 'timetable' %}" class="btn btn-success">
+            🔄 Generate New Timetable
+        </a>
+    </div>
+
+    <table class="fet-timetable">
+        <thead>
+            <tr>
+                <th class="time-header">Time Slot</th>
+                {% for day in days %}
+                    {% if day in grouped_data %}
+                        <th class="day-header">{{ day }}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for time_slot in time_slots %}
+                <tr>
+                    <td class="time-slot">{{ time_slot }}</td>
+                    {% for day in days %}
+                        {% if day in grouped_data %}
+                            <td>
+                                {% if time_slot in grouped_data|get_item:day %}
+                                    <div class="entries-container">
+                                        {% for entry in grouped_data|get_item:day|get_item:time_slot %}
+                                            <div class="timetable-entry {% if 'Lab' in entry.course.course_type %}lab{% endif %}">
+                                                <div class="entry-section">{{ entry.section.section_id }}</div>
+                                                <div class="entry-subject">{{ entry.course.course_name }}</div>
+                                                <div class="entry-faculty">{{ entry.instructor.name }}</div>
+                                                <div class="entry-room">🏫 {{ entry.room.r_number }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty-cell">—</div>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Statistics Panel -->
+    {% if stats %}
+    <div class="stats-panel">
+        <h3>📊 Generation Statistics</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Entries</div>
+                <div class="stat-value">{{ stats.total_entries }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Sections</div>
+                <div class="stat-value">{{ stats.total_sections }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Courses</div>
+                <div class="stat-value">{{ stats.total_courses }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Faculty</div>
+                <div class="stat-value">{{ stats.total_faculty }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Rooms Used</div>
+                <div class="stat-value">{{ stats.total_rooms_used }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Fitness Score</div>
+                <div class="stat-value">{{ stats.fitness_score|floatformat:3 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Conflicts</div>
+                <div class="stat-value">{{ stats.conflicts }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Gen Time</div>
+                <div class="stat-value">{{ stats.generation_time|floatformat:1 }}s</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

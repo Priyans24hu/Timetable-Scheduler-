@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+
+
+
+<fieldset class="fieldset">
+  <div class="tablink">
+    <a href="{% url 'instructorAdd'%}">
+      <h1 onclick="openPage('new')" id="defaultOpen">Add Faculty</h1>
+    </a>
+    <h1 onclick="openPage('edit')" id="link_to_edit">Edit Faculty</h1>
+  </div>
+  <div class="tabcontent" id="edit">
+    <table class="editTable">
+      <thead>
+        <tr class="table-headers">
+          <th>Faculty ID</th>
+          <th>Name</th>
+          <th>Specialization</th>
+          <th>Max Courses</th>
+          <th class="empty"></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for faculty in instructors %}
+        <tr>
+          <td>{{faculty.uid}}</td>
+          <td>{{faculty.name}}</td>
+          <td>{{faculty.specialization}}</td>
+          <td>{{faculty.max_courses_per_semester}}</td>
+          <td class="empty">
+            <form action="{% url 'deleteinstructor' faculty.id %}" method="post">
+              {% csrf_token %}
+              <input type="submit" value="X" class="cross">
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+</fieldset>
+
+{% endblock %}

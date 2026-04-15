@@ -1,0 +1,38 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B59B6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="55" fill="url(#purpleGradient)" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Clock face -->
+  <circle cx="60" cy="60" r="45" fill="white" stroke="#9B59B6" stroke-width="2"/>
+  
+  <!-- Clock numbers -->
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#9B59B6" text-anchor="middle">12</text>
+  <text x="85" y="62" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#9B59B6" text-anchor="middle">3</text>
+  <text x="60" y="95" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#9B59B6" text-anchor="middle">6</text>
+  <text x="35" y="62" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#9B59B6" text-anchor="middle">9</text>
+  
+  <!-- Clock hands -->
+  <line x1="60" y1="60" x2="60" y2="35" stroke="#9B59B6" stroke-width="2" stroke-linecap="round"/>
+  <line x1="60" y1="60" x2="75" y2="55" stroke="#9B59B6" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Circling arrow -->
+  <path d="M 75 40 Q 85 30, 80 25 T 70 20" fill="none" stroke="#4A90E2" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4A90E2"/>
+    </marker>
+  </defs>
+  
+  <!-- Flag on clock -->
+  <rect x="72" y="15" width="8" height="6" fill="#4A90E2" rx="1"/>
+  
+  <!-- LecTrack text -->
+  <text x="60" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#9B59B6" text-anchor="middle">LecTrack</text>
+</svg>
