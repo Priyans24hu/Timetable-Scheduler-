@@ -250,6 +250,108 @@
     padding: 10px 20px;
 }
 
+/* CONFLICT ALERT PANEL - Task 3 */
+.conflict-alert-panel {
+    margin: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.conflict-alert-panel.has-conflicts {
+    display: block;
+}
+
+.conflict-alert-panel .alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.conflict-alert-panel .alert-title {
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.conflict-alert-panel .conflict-count {
+    background: rgba(255,255,255,0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.conflict-alert-panel .alert-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.conflict-alert-panel .btn-auto-fix {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.conflict-alert-panel .btn-auto-fix:hover {
+    background: #229954;
+}
+
+.conflict-alert-panel .btn-dismiss {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.conflict-alert-panel .btn-dismiss:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.conflict-alert-panel .conflict-list {
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.conflict-alert-panel .conflict-item {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.conflict-alert-panel .conflict-item:last-child {
+    border-bottom: none;
+}
+
+.conflict-alert-panel .conflict-type {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 11px;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
 /* Statistics Panel */
 .stats-panel {
     background-color: #f8f9fa;
@@ -309,6 +411,39 @@
             🔄 Generate New Timetable
         </a>
     </div>
+
+    <!-- CONFLICT ALERT PANEL - Task 3 -->
+    {% with conflict_entries=entries|dictsort:"has_conflict" %}
+    {% for entry in entries %}
+        {% if entry.has_conflict %}
+            {% if forloop.first %}
+            <div id="conflict-alert-panel" class="conflict-alert-panel has-conflicts">
+                <div class="alert-header">
+                    <div class="alert-title">
+                        ⚠️ Conflicts Detected
+                        <span class="conflict-count" id="conflict-count">0</span>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn-auto-fix" onclick="autoFixConflicts()">Auto-Fix All</button>
+                        <button class="btn-dismiss" onclick="dismissConflictPanel()">Dismiss</button>
+                    </div>
+                </div>
+                <div class="conflict-list" id="conflict-list">
+            {% endif %}
+                    <div class="conflict-item">
+                        <span class="conflict-type">{{ entry.conflict_details.conflict_type|default:"Conflict" }}</span>
+                        <span>{{ entry.section.section_id }} - {{ entry.course.course_name }}: {{ entry.conflict_details.message|default:"Schedule conflict detected" }}</span>
+                    </div>
+            {% if forloop.last %}
+                </div>
+            </div>
+            <script>
+                document.getElementById('conflict-count').textContent = document.querySelectorAll('.conflict-item').length;
+            </script>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% endwith %}
 
     <table class="fet-timetable">
         <thead>
@@ -480,6 +615,45 @@ function showNotification(message, type) {
     setTimeout(() => {
         notif.remove();
     }, 3000);
+}
+
+// Task 3: Conflict Alert Panel Functions
+function dismissConflictPanel() {
+    const panel = document.getElementById('conflict-alert-panel');
+    if (panel) {
+        panel.style.display = 'none';
+    }
+}
+
+function autoFixConflicts() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    showNotification('Running auto-fix for all conflicts...', 'info');
+    
+    fetch('/api/auto-fix', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ strategy: 'best_suggestion' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Auto-fix applied! Resolved ${data.resolved_count || 'some'} conflicts.`, 'success');
+            // Reload page to show updated state
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showNotification(data.message || 'Auto-fix could not resolve all conflicts', 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error during auto-fix. Please try again.', 'error');
+    });
 }
 </script>
 {% endblock %}
