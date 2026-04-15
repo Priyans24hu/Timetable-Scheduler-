@@ -214,6 +214,31 @@
     font-style: italic;
 }
 
+/* LOCK TOGGLE BUTTON - Task 2 */
+.lock-toggle-btn {
+    position: absolute;
+    top: 2px;
+    right: 18px;
+    font-size: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.lock-toggle-btn:hover {
+    opacity: 1;
+}
+
+.lock-toggle-btn.locked {
+    color: #9b59b6;
+}
+
+.lock-toggle-btn.unlocked {
+    color: #95a5a6;
+}
+
 /* Action Buttons */
 .timetable-actions {
     margin: 20px;
@@ -326,6 +351,12 @@
                                                     {% elif entry.preference_score >= 0.4 %}⭐⭐
                                                     {% else %}⭐{% endif %}
                                                 </span>
+                                                <!-- Lock/Unlock Toggle Button -->
+                                                <button class="lock-toggle-btn {% if entry.is_locked %}locked{% else %}unlocked{% endif %}" 
+                                                        onclick="toggleLock({{ entry.entry_id }}, this)"
+                                                        title="{% if entry.is_locked %}Click to unlock{% else %}Click to lock{% endif %}">
+                                                    {% if entry.is_locked %}🔒{% else %}🔓{% endif %}
+                                                </button>
                                             </div>
                                         {% endfor %}
                                     </div>
@@ -381,5 +412,76 @@
     </div>
     {% endif %}
 </div>
+
+{% block extra_js %}
+<script>
+// Task 2: Lock/Unlock Toggle Function
+function toggleLock(entryId, btnElement) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    fetch(`/api/toggle-lock/${entryId}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button appearance
+            const entryDiv = btnElement.closest('.timetable-entry');
+            
+            if (data.is_locked) {
+                btnElement.innerHTML = '🔒';
+                btnElement.classList.remove('unlocked');
+                btnElement.classList.add('locked');
+                btnElement.title = 'Click to unlock';
+                entryDiv.classList.add('locked');
+                // Add lock badge if not present
+                if (!entryDiv.querySelector('.entry-status.locked')) {
+                    const lockBadge = document.createElement('span');
+                    lockBadge.className = 'entry-status locked';
+                    lockBadge.title = 'Locked';
+                    lockBadge.textContent = '🔒';
+                    entryDiv.insertBefore(lockBadge, entryDiv.firstChild);
+                }
+            } else {
+                btnElement.innerHTML = '🔓';
+                btnElement.classList.remove('locked');
+                btnElement.classList.add('unlocked');
+                btnElement.title = 'Click to lock';
+                entryDiv.classList.remove('locked');
+                // Remove lock badge
+                const lockBadge = entryDiv.querySelector('.entry-status.locked');
+                if (lockBadge) lockBadge.remove();
+            }
+            
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message || 'Error toggling lock', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+// Notification helper
+function showNotification(message, type) {
+    const notif = document.createElement('div');
+    notif.className = `alert alert-${type === 'success' ? 'success' : 'danger'} notification-toast`;
+    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}
 
 {% endblock %}
