@@ -108,6 +108,97 @@
     border-color: #ffc107;
 }
 
+/* CONFLICT VISUAL INDICATORS - Task 1 */
+/* Entry has conflicts - Red highlighting */
+.timetable-entry.conflict {
+    background-color: #fee;
+    border: 2px solid #e74c3c;
+    box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+}
+
+.timetable-entry.conflict::before {
+    content: "⚠️";
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 12px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Locked entry styling */
+.timetable-entry.locked {
+    border: 2px dashed #9b59b6;
+    background-color: #f5eef8;
+}
+
+.timetable-entry.locked::after {
+    content: "🔒";
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 10px;
+}
+
+/* Entry type indicators */
+.timetable-entry.manual {
+    border-left: 3px solid #27ae60;
+}
+
+.timetable-entry.auto {
+    border-left: 3px solid #3498db;
+}
+
+.timetable-entry.hybrid {
+    border-left: 3px solid #f39c12;
+}
+
+/* Position relative for absolute positioning of badges */
+.timetable-entry {
+    position: relative;
+}
+
+/* Status indicator badge */
+.entry-status {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 8px;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-weight: bold;
+}
+
+.entry-status.conflict {
+    background: #e74c3c;
+    color: white;
+}
+
+.entry-status.locked {
+    background: #9b59b6;
+    color: white;
+}
+
+.entry-status.manual {
+    background: #27ae60;
+    color: white;
+}
+
+/* Preference score indicator */
+.preference-score {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 8px;
+    color: #7f8c8d;
+}
+
 /* Multiple Entries Container */
 .entries-container {
     display: flex;
@@ -215,11 +306,26 @@
                                 {% if time_slot in grouped_data|get_item:day %}
                                     <div class="entries-container">
                                         {% for entry in grouped_data|get_item:day|get_item:time_slot %}
-                                            <div class="timetable-entry {% if 'Lab' in entry.course.course_type %}lab{% endif %}">
+                                            <div class="timetable-entry 
+                                                    {% if 'Lab' in entry.course.course_type %}lab{% endif %}
+                                                    {% if entry.has_conflict %}conflict{% endif %}
+                                                    {% if entry.is_locked %}locked{% endif %}
+                                                    {{ entry.entry_type }}">
+                                                {% if entry.has_conflict %}
+                                                    <span class="entry-status conflict" title="Has conflicts">⚠️</span>
+                                                {% endif %}
+                                                {% if entry.is_locked %}
+                                                    <span class="entry-status locked" title="Locked">🔒</span>
+                                                {% endif %}
                                                 <div class="entry-section">{{ entry.section.section_id }}</div>
                                                 <div class="entry-subject">{{ entry.course.course_name }}</div>
                                                 <div class="entry-faculty">{{ entry.instructor.name }}</div>
                                                 <div class="entry-room">🏫 {{ entry.room.r_number }}</div>
+                                                <span class="preference-score" title="Preference Score: {{ entry.preference_score|floatformat:2 }}">
+                                                    {% if entry.preference_score >= 0.7 %}⭐⭐⭐
+                                                    {% elif entry.preference_score >= 0.4 %}⭐⭐
+                                                    {% else %}⭐{% endif %}
+                                                </span>
                                             </div>
                                         {% endfor %}
                                     </div>
