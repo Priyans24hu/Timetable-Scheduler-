@@ -1,507 +1,743 @@
 {% extends 'base.html' %}
-{% block content %}
 {% load static %}
 
+{% block content %}
+
 <style>
-/* FET-Style Timetable Grid */
-.timetable-container {
-    margin: 20px;
-    overflow-x: auto;
-}
+    .stored-timetable-container {
+        padding: 20px;
+    }
 
-.timetable-title {
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #333;
-}
+    .timetable-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
-.timetable-info {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #666;
-}
+    .timetable-info h2 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+    }
 
-.fet-timetable {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-    table-layout: fixed;
-}
+    .timetable-meta {
+        display: flex;
+        gap: 20px;
+        font-size: 14px;
+        opacity: 0.9;
+    }
 
-.fet-timetable th {
-    background-color: #2c3e50;
-    color: white;
-    padding: 8px;
-    text-align: center;
-    border: 1px solid #34495e;
-    font-weight: bold;
-}
+    .timetable-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
 
-.fet-timetable th.time-header {
-    width: 100px;
-    background-color: #34495e;
-}
+    /* Enhanced FET-Style Table */
+    .fet-timetable {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        margin: 20px 0;
+    }
 
-.fet-timetable th.day-header {
-    width: 16%;
-}
+    .fet-timetable th {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        color: white;
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-.fet-timetable td {
-    border: 1px solid #bdc3c7;
-    padding: 4px;
-    vertical-align: top;
-    height: 60px;
-    background-color: #fff;
-}
+    .fet-timetable th.time-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        width: 100px;
+    }
 
-.fet-timetable td.time-slot {
-    background-color: #ecf0f1;
-    font-weight: bold;
-    text-align: center;
-    vertical-align: middle;
-}
+    .fet-timetable td {
+        border: 1px solid #e2e8f0;
+        padding: 0;
+        vertical-align: top;
+        height: 100px;
+        width: 18%;
+    }
 
-.fet-timetable tr:nth-child(even) td.time-slot {
-    background-color: #d5dbdb;
-}
+    .fet-timetable .time-slot {
+        background: #f7fafc;
+        font-weight: 600;
+        color: #4a5568;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 12px;
+    }
 
-/* Entry Cell Styling */
-.timetable-entry {
-    background-color: #e8f4f8;
-    border: 1px solid #3498db;
-    border-radius: 3px;
-    padding: 3px;
-    margin-bottom: 3px;
-    font-size: 10px;
-    line-height: 1.3;
-}
+    /* Multiple entries in one cell */
+    .entries-container {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+        height: 100%;
+    }
 
-.timetable-entry:last-child {
-    margin-bottom: 0;
-}
+    /* Individual Entry Card */
+    .timetable-entry {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        font-size: 11px;
+        line-height: 1.3;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
 
-.entry-section {
-    font-weight: bold;
-    color: #2c3e50;
-    font-size: 9px;
-}
+    .timetable-entry:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #667eea;
+        z-index: 10;
+    }
 
-.entry-subject {
-    color: #2980b9;
-    font-weight: 600;
-}
+    .entry-section {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
 
-.entry-faculty {
-    color: #27ae60;
-}
+    .entry-subject {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
 
-.entry-room {
-    color: #e74c3c;
-    font-size: 9px;
-}
+    .entry-faculty {
+        color: #4a5568;
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
 
-/* Lab Entry Styling */
-.timetable-entry.lab {
-    background-color: #fff3cd;
-    border-color: #ffc107;
-}
+    .entry-room {
+        color: #718096;
+        font-size: 10px;
+        font-weight: 500;
+    }
 
-/* CONFLICT VISUAL INDICATORS - Task 1 */
-/* Entry has conflicts - Red highlighting */
-.timetable-entry.conflict {
-    background-color: #fee;
-    border: 2px solid #e74c3c;
-    box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
-}
+    /* Lab Entry Styling */
+    .timetable-entry.lab {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
 
-.timetable-entry.conflict::before {
-    content: "⚠️";
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    font-size: 12px;
-    background: #e74c3c;
-    color: white;
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+    /* CONFLICT VISUAL INDICATORS - Task 1 */
+    .timetable-entry.conflict {
+        background-color: #fee;
+        border: 2px solid #e74c3c;
+        box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+    }
 
-/* Locked entry styling */
-.timetable-entry.locked {
-    border: 2px dashed #9b59b6;
-    background-color: #f5eef8;
-}
+    .timetable-entry.conflict::before {
+        content: "⚠️";
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        font-size: 12px;
+        background: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.timetable-entry.locked::after {
-    content: "🔒";
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    font-size: 10px;
-}
+    .timetable-entry.locked {
+        border: 2px dashed #9b59b6;
+        background-color: #f5eef8;
+    }
 
-/* Entry type indicators */
-.timetable-entry.manual {
-    border-left: 3px solid #27ae60;
-}
+    .timetable-entry.manual {
+        border-left: 3px solid #27ae60;
+    }
 
-.timetable-entry.auto {
-    border-left: 3px solid #3498db;
-}
+    .timetable-entry.auto {
+        border-left: 3px solid #3498db;
+    }
 
-.timetable-entry.hybrid {
-    border-left: 3px solid #f39c12;
-}
+    .timetable-entry.hybrid {
+        border-left: 3px solid #f39c12;
+    }
 
-/* Position relative for absolute positioning of badges */
-.timetable-entry {
-    position: relative;
-}
+    .timetable-entry {
+        position: relative;
+    }
 
-/* Status indicator badge */
-.entry-status {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    font-size: 8px;
-    padding: 1px 3px;
-    border-radius: 2px;
-    font-weight: bold;
-}
+    .entry-status {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        font-size: 8px;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-weight: bold;
+    }
 
-.entry-status.conflict {
-    background: #e74c3c;
-    color: white;
-}
+    .entry-status.conflict {
+        background: #e74c3c;
+        color: white;
+    }
 
-.entry-status.locked {
-    background: #9b59b6;
-    color: white;
-}
+    .entry-status.locked {
+        background: #9b59b6;
+        color: white;
+    }
 
-.entry-status.manual {
-    background: #27ae60;
-    color: white;
-}
+    .preference-score {
+        position: absolute;
+        bottom: 2px;
+        left: 2px;
+        font-size: 8px;
+        color: #7f8c8d;
+    }
 
-/* Preference score indicator */
-.preference-score {
-    position: absolute;
-    bottom: 2px;
-    left: 2px;
-    font-size: 8px;
-    color: #7f8c8d;
-}
+    /* Empty Cell */
+    .empty-cell {
+        background-color: #f8f9fa;
+        color: #dee2e6;
+        text-align: center;
+        font-style: italic;
+    }
 
-/* Multiple Entries Container */
-.entries-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
+    /* LOCK TOGGLE BUTTON - Task 2 */
+    .lock-toggle-btn {
+        position: absolute;
+        top: 2px;
+        right: 18px;
+        font-size: 10px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
 
-/* Empty Cell */
-.empty-cell {
-    background-color: #f8f9fa;
-    color: #dee2e6;
-    text-align: center;
-    font-style: italic;
-}
+    .lock-toggle-btn:hover {
+        opacity: 1;
+    }
 
-/* LOCK TOGGLE BUTTON - Task 2 */
-.lock-toggle-btn {
-    position: absolute;
-    top: 2px;
-    right: 18px;
-    font-size: 10px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
+    .lock-toggle-btn.locked {
+        color: #9b59b6;
+    }
 
-.lock-toggle-btn:hover {
-    opacity: 1;
-}
+    .lock-toggle-btn.unlocked {
+        color: #95a5a6;
+    }
 
-.lock-toggle-btn.locked {
-    color: #9b59b6;
-}
+    /* Action Buttons */
+    .timetable-actions {
+        margin: 20px;
+        text-align: center;
+    }
 
-.lock-toggle-btn.unlocked {
-    color: #95a5a6;
-}
+    .timetable-actions .btn {
+        margin: 5px;
+        padding: 10px 20px;
+    }
 
-/* Action Buttons */
-.timetable-actions {
-    margin: 20px;
-    text-align: center;
-}
+    /* CONFLICT ALERT PANEL - Task 3 */
+    .conflict-alert-panel {
+        margin: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+        color: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        display: none;
+    }
 
-.timetable-actions .btn {
-    margin: 5px;
-    padding: 10px 20px;
-}
+    .conflict-alert-panel.has-conflicts {
+        display: block;
+    }
 
-/* CONFLICT ALERT PANEL - Task 3 */
-.conflict-alert-panel {
-    margin: 20px;
-    padding: 15px 20px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
-    color: white;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    display: none;
-}
+    .conflict-alert-panel .alert-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
 
-.conflict-alert-panel.has-conflicts {
-    display: block;
-}
+    .conflict-alert-panel .alert-title {
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-.conflict-alert-panel .alert-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
+    .conflict-alert-panel .conflict-count {
+        background: rgba(255,255,255,0.3);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 14px;
+    }
 
-.conflict-alert-panel .alert-title {
-    font-size: 18px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+    .conflict-alert-panel .alert-actions {
+        display: flex;
+        gap: 10px;
+    }
 
-.conflict-alert-panel .conflict-count {
-    background: rgba(255,255,255,0.3);
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 14px;
-}
+    .conflict-alert-panel .btn-auto-fix {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
 
-.conflict-alert-panel .alert-actions {
-    display: flex;
-    gap: 10px;
-}
+    .conflict-alert-panel .btn-auto-fix:hover {
+        background: #229954;
+    }
 
-.conflict-alert-panel .btn-auto-fix {
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.2s;
-}
+    .conflict-alert-panel .btn-dismiss {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
 
-.conflict-alert-panel .btn-auto-fix:hover {
-    background: #229954;
-}
+    .conflict-alert-panel .btn-dismiss:hover {
+        background: rgba(255,255,255,0.3);
+    }
 
-.conflict-alert-panel .btn-dismiss {
-    background: rgba(255,255,255,0.2);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+    .conflict-alert-panel .conflict-list {
+        max-height: 150px;
+        overflow-y: auto;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+    }
 
-.conflict-alert-panel .btn-dismiss:hover {
-    background: rgba(255,255,255,0.3);
-}
+    .conflict-alert-panel .conflict-item {
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-.conflict-alert-panel .conflict-list {
-    max-height: 150px;
-    overflow-y: auto;
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 10px;
-}
+    .conflict-alert-panel .conflict-item:last-child {
+        border-bottom: none;
+    }
 
-.conflict-alert-panel .conflict-item {
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+    .conflict-alert-panel .conflict-type {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 11px;
+        background: rgba(255,255,255,0.2);
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
 
-.conflict-alert-panel .conflict-item:last-child {
-    border-bottom: none;
-}
+    /* SUGGESTION SIDEBAR - Task 4 */
+    .suggestion-sidebar {
+        position: fixed;
+        right: -400px;
+        top: 0;
+        width: 380px;
+        height: 100vh;
+        background: white;
+        box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+        border-left: 1px solid #e0e0e0;
+    }
 
-.conflict-alert-panel .conflict-type {
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 11px;
-    background: rgba(255,255,255,0.2);
-    padding: 2px 6px;
-    border-radius: 3px;
-}
+    .suggestion-sidebar.open {
+        right: 0;
+    }
 
-/* Statistics Panel */
-.stats-panel {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin: 20px;
-}
+    .suggestion-sidebar .sidebar-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
 
-.stats-panel h3 {
-    margin-top: 0;
-    color: #2c3e50;
-}
+    .suggestion-sidebar .sidebar-header h3 {
+        margin: 0;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-}
+    .suggestion-sidebar .close-btn {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-.stat-item {
-    background-color: white;
-    padding: 10px;
-    border-radius: 4px;
-    border-left: 3px solid #3498db;
-}
+    .suggestion-sidebar .close-btn:hover {
+        background: rgba(255,255,255,0.3);
+    }
 
-.stat-label {
-    font-size: 11px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-}
+    .suggestion-sidebar .entry-info {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+    }
 
-.stat-value {
-    font-size: 18px;
-    font-weight: bold;
-    color: #2c3e50;
-}
+    .suggestion-sidebar .entry-info h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+
+    .suggestion-sidebar .entry-info p {
+        margin: 3px 0;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .suggestion-sidebar .suggestion-list {
+        padding: 20px;
+    }
+
+    .suggestion-sidebar .suggestion-item {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .suggestion-sidebar .suggestion-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .suggestion-sidebar .suggestion-item.best {
+        border-color: #27ae60;
+        background: #f0fff4;
+    }
+
+    .suggestion-sidebar .suggestion-item.good {
+        border-color: #f39c12;
+        background: #fffbf0;
+    }
+
+    .suggestion-sidebar .suggestion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .suggestion-sidebar .suggestion-type {
+        font-weight: bold;
+        font-size: 12px;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 3px;
+        background: #667eea;
+        color: white;
+    }
+
+    .suggestion-sidebar .suggestion-item.best .suggestion-type {
+        background: #27ae60;
+    }
+
+    .suggestion-sidebar .suggestion-item.good .suggestion-type {
+        background: #f39c12;
+    }
+
+    .suggestion-sidebar .preference-indicator {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .suggestion-sidebar .suggestion-details {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .suggestion-sidebar .suggestion-meta {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #888;
+    }
+
+    .suggestion-sidebar .no-suggestions {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+
+    .suggestion-sidebar .loading {
+        text-align: center;
+        padding: 40px;
+        color: #667eea;
+    }
+
+    .suggestion-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 999;
+        display: none;
+    }
+
+    .suggestion-overlay.open {
+        display: block;
+    }
+
+    /* Clickable entry style */
+    .timetable-entry.clickable {
+        cursor: pointer;
+    }
+
+    .timetable-entry.clickable:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Statistics Panel */
+    .stats-panel {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px;
+    }
+
+    .stats-panel h3 {
+        margin-top: 0;
+        color: #495057;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .fet-timetable {
+            font-size: 10px;
+        }
+
+        .fet-timetable th,
+        .fet-timetable td {
+            padding: 4px 2px;
+        }
+
+        .timetable-entry {
+            font-size: 9px;
+            padding: 4px;
+        }
+
+        .entry-subject {
+            font-size: 10px;
+        }
+
+        .timetable-meta {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+
+    /* No Timetable Message */
+    .no-timetable {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .no-timetable h3 {
+        color: #4a5568;
+        margin-bottom: 20px;
+    }
+
+    .no-timetable .btn {
+        padding: 12px 30px;
+        font-size: 16px;
+    }
 </style>
 
-<div class="timetable-container">
-    <h2 class="timetable-title">📅 College Timetable - FET Style</h2>
-    <p class="timetable-info">
-        Generated on: {{ generated_at|default:"Now" }} | 
-        Batch ID: {{ batch_id|default:"Latest" }} | 
-        Total Entries: {{ total_entries }}
-    </p>
+<div class="stored-timetable-container">
+    {% csrf_token %}
 
-    <div class="timetable-actions">
-        <a href="{% url 'timetable_pdf_batch' batch_id|default:'' %}" class="btn btn-primary">
-            📄 Export as PDF
-        </a>
-        <a href="{% url 'generation_history' %}" class="btn btn-secondary">
-            📚 Generation History
-        </a>
-        <a href="{% url 'timetable' %}" class="btn btn-success">
-            🔄 Generate New Timetable
-        </a>
+    {% if entries %}
+    <div class="timetable-info">
+        <h2>📅 Stored Timetable</h2>
+        <div class="timetable-meta">
+            <span>📊 {{ entries|length }} entries</span>
+            <span>⚠️ {{ conflict_count }} conflicts</span>
+            <span>🔒 {{ locked_count }} locked</span>
+            <span>⭐ Avg Pref: {{ avg_preference|floatformat:1 }}%</span>
+        </div>
     </div>
 
     <!-- CONFLICT ALERT PANEL - Task 3 -->
-    {% with conflict_entries=entries|dictsort:"has_conflict" %}
-    {% for entry in entries %}
-        {% if entry.has_conflict %}
-            {% if forloop.first %}
-            <div id="conflict-alert-panel" class="conflict-alert-panel has-conflicts">
-                <div class="alert-header">
-                    <div class="alert-title">
-                        ⚠️ Conflicts Detected
-                        <span class="conflict-count" id="conflict-count">0</span>
-                    </div>
-                    <div class="alert-actions">
-                        <button class="btn-auto-fix" onclick="autoFixConflicts()">Auto-Fix All</button>
-                        <button class="btn-dismiss" onclick="dismissConflictPanel()">Dismiss</button>
-                    </div>
-                </div>
-                <div class="conflict-list" id="conflict-list">
-            {% endif %}
-                    <div class="conflict-item">
-                        <span class="conflict-type">{{ entry.conflict_details.conflict_type|default:"Conflict" }}</span>
-                        <span>{{ entry.section.section_id }} - {{ entry.course.course_name }}: {{ entry.conflict_details.message|default:"Schedule conflict detected" }}</span>
-                    </div>
-            {% if forloop.last %}
-                </div>
+    {% if conflict_count > 0 %}
+    <div id="conflict-alert-panel" class="conflict-alert-panel has-conflicts">
+        <div class="alert-header">
+            <div class="alert-title">
+                ⚠️ Conflicts Detected
+                <span class="conflict-count">{{ conflict_count }}</span>
             </div>
-            <script>
-                document.getElementById('conflict-count').textContent = document.querySelectorAll('.conflict-item').length;
-            </script>
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-    {% endwith %}
+            <div class="alert-actions">
+                <button class="btn-auto-fix" onclick="autoFixConflicts()">Auto-Fix All</button>
+                <button class="btn-dismiss" onclick="dismissConflictPanel()">Dismiss</button>
+            </div>
+        </div>
+        <div class="conflict-list" id="conflict-list">
+            {% for entry in entries %}
+                {% if entry.has_conflict %}
+                <div class="conflict-item">
+                    <span class="conflict-type">{{ entry.conflict_details.conflict_type|default:"Conflict" }}</span>
+                    <span>{{ entry.section.section_id }} - {{ entry.course.course_name }}: {{ entry.conflict_details.message|default:"Schedule conflict detected" }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <table class="fet-timetable">
         <thead>
             <tr>
                 <th class="time-header">Time Slot</th>
-                {% for day in days %}
-                    {% if day in grouped_data %}
-                        <th class="day-header">{{ day }}</th>
-                    {% endif %}
-                {% endfor %}
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
             </tr>
         </thead>
         <tbody>
             {% for time_slot in time_slots %}
-                <tr>
-                    <td class="time-slot">{{ time_slot }}</td>
-                    {% for day in days %}
-                        {% if day in grouped_data %}
+            <tr>
+                <td class="time-slot">{{ time_slot }}</td>
+                {% for day in days %}
+                    {% with slot_entries=entries_by_slot|get_item:day|get_item:time_slot %}
+                        {% if slot_entries %}
                             <td>
-                                {% if time_slot in grouped_data|get_item:day %}
-                                    <div class="entries-container">
-                                        {% for entry in grouped_data|get_item:day|get_item:time_slot %}
-                                            <div class="timetable-entry 
-                                                    {% if 'Lab' in entry.course.course_type %}lab{% endif %}
-                                                    {% if entry.has_conflict %}conflict{% endif %}
-                                                    {% if entry.is_locked %}locked{% endif %}
-                                                    {{ entry.entry_type }}">
-                                                {% if entry.has_conflict %}
-                                                    <span class="entry-status conflict" title="Has conflicts">⚠️</span>
-                                                {% endif %}
-                                                {% if entry.is_locked %}
-                                                    <span class="entry-status locked" title="Locked">🔒</span>
-                                                {% endif %}
-                                                <div class="entry-section">{{ entry.section.section_id }}</div>
-                                                <div class="entry-subject">{{ entry.course.course_name }}</div>
-                                                <div class="entry-faculty">{{ entry.instructor.name }}</div>
-                                                <div class="entry-room">🏫 {{ entry.room.r_number }}</div>
-                                                <span class="preference-score" title="Preference Score: {{ entry.preference_score|floatformat:2 }}">
-                                                    {% if entry.preference_score >= 0.7 %}⭐⭐⭐
-                                                    {% elif entry.preference_score >= 0.4 %}⭐⭐
-                                                    {% else %}⭐{% endif %}
-                                                </span>
-                                                <!-- Lock/Unlock Toggle Button -->
-                                                <button class="lock-toggle-btn {% if entry.is_locked %}locked{% else %}unlocked{% endif %}" 
-                                                        onclick="toggleLock({{ entry.entry_id }}, this)"
-                                                        title="{% if entry.is_locked %}Click to unlock{% else %}Click to lock{% endif %}">
-                                                    {% if entry.is_locked %}🔒{% else %}🔓{% endif %}
-                                                </button>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <div class="empty-cell">—</div>
-                                {% endif %}
+                                <div class="entries-container">
+                                    {% for entry in slot_entries %}
+                                        <div class="timetable-entry {% if 'Lab' in entry.course.course_type %}lab{% endif %}
+                                                {% if entry.has_conflict %}conflict{% endif %}
+                                                {% if entry.is_locked %}locked{% endif %}
+                                                {{ entry.entry_type }}"
+                                                onclick="openSuggestionSidebar({{ entry.entry_id }})"
+                                                data-entry-id="{{ entry.entry_id }}">
+                                            {% if entry.has_conflict %}
+                                                <span class="entry-status conflict" title="Has conflicts">⚠️</span>
+                                            {% endif %}
+                                            {% if entry.is_locked %}
+                                                <span class="entry-status locked" title="Locked">🔒</span>
+                                            {% endif %}
+                                            <div class="entry-section">{{ entry.section.section_id }}</div>
+                                            <div class="entry-subject">{{ entry.course.course_name }}</div>
+                                            <div class="entry-faculty">{{ entry.instructor.name }}</div>
+                                            <div class="entry-room">🏫 {{ entry.room.r_number }}</div>
+                                            <span class="preference-score" title="Preference Score: {{ entry.preference_score|floatformat:2 }}">
+                                                {% if entry.preference_score >= 0.7 %}⭐⭐⭐
+                                                {% elif entry.preference_score >= 0.4 %}⭐⭐
+                                                {% else %}⭐{% endif %}
+                                            </span>
+                                            <button class="lock-toggle-btn {% if entry.is_locked %}locked{% else %}unlocked{% endif %}" 
+                                                    onclick="event.stopPropagation(); toggleLock({{ entry.entry_id }}, this)"
+                                                    title="{% if entry.is_locked %}Click to unlock{% else %}Click to lock{% endif %}">
+                                                {% if entry.is_locked %}🔒{% else %}🔓{% endif %}
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        {% else %}
+                            <td>
+                                <div class="empty-cell">—</div>
                             </td>
                         {% endif %}
-                    {% endfor %}
-                </tr>
+                    {% endwith %}
+                {% endfor %}
+            </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -509,41 +745,66 @@
     <!-- Statistics Panel -->
     {% if stats %}
     <div class="stats-panel">
-        <h3>📊 Generation Statistics</h3>
+        <h3>📊 Timetable Statistics</h3>
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-label">Total Entries</div>
                 <div class="stat-value">{{ stats.total_entries }}</div>
+                <div class="stat-label">Total Entries</div>
             </div>
             <div class="stat-item">
-                <div class="stat-label">Sections</div>
-                <div class="stat-value">{{ stats.total_sections }}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Courses</div>
-                <div class="stat-value">{{ stats.total_courses }}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Faculty</div>
-                <div class="stat-value">{{ stats.total_faculty }}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Rooms Used</div>
-                <div class="stat-value">{{ stats.total_rooms_used }}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Fitness Score</div>
-                <div class="stat-value">{{ stats.fitness_score|floatformat:3 }}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Conflicts</div>
                 <div class="stat-value">{{ stats.conflicts }}</div>
+                <div class="stat-label">Conflicts</div>
             </div>
             <div class="stat-item">
-                <div class="stat-label">Gen Time</div>
+                <div class="stat-value">{{ stats.locked }}</div>
+                <div class="stat-label">Locked</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.avg_preference|floatformat:0 }}%</div>
+                <div class="stat-label">Avg Preference</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.fitness|floatformat:3 }}</div>
+                <div class="stat-label">Fitness Score</div>
+            </div>
+            <div class="stat-item">
                 <div class="stat-value">{{ stats.generation_time|floatformat:1 }}s</div>
+                <div class="stat-label">Gen Time</div>
             </div>
         </div>
+    </div>
+    {% endif %}
+
+    <!-- Suggestion Sidebar HTML - Task 4 -->
+    <div id="suggestion-overlay" class="suggestion-overlay" onclick="closeSuggestionSidebar()"></div>
+    <div id="suggestion-sidebar" class="suggestion-sidebar">
+        <div class="sidebar-header">
+            <h3>💡 Smart Suggestions</h3>
+            <button class="close-btn" onclick="closeSuggestionSidebar()">&times;</button>
+        </div>
+        <div class="entry-info" id="sidebar-entry-info">
+            <h4>Select an entry</h4>
+            <p>Click on any timetable entry to see suggestions</p>
+        </div>
+        <div class="suggestion-list" id="suggestion-list">
+            <div class="no-suggestions">
+                <h4>No Entry Selected</h4>
+                <p>Click on any timetable entry to view smart suggestions for resolving conflicts or improving the schedule.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="timetable-actions">
+        <a href="{% url 'timetable_generation' %}" class="btn btn-primary">🔄 Regenerate Timetable</a>
+        <a href="{% url 'home' %}" class="btn btn-secondary">🏠 Back to Home</a>
+        <button onclick="validateAllEntries()" class="btn btn-info">✅ Validate All</button>
+    </div>
+
+    {% else %}
+    <div class="no-timetable">
+        <h3>No Stored Timetable Found</h3>
+        <p>Generate a timetable to see it displayed here with intelligent features.</p>
+        <a href="{% url 'timetable_generation' %}" class="btn btn-primary">Generate Timetable</a>
     </div>
     {% endif %}
 </div>
@@ -565,7 +826,6 @@ function toggleLock(entryId, btnElement) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update button appearance
             const entryDiv = btnElement.closest('.timetable-entry');
             
             if (data.is_locked) {
@@ -574,7 +834,6 @@ function toggleLock(entryId, btnElement) {
                 btnElement.classList.add('locked');
                 btnElement.title = 'Click to unlock';
                 entryDiv.classList.add('locked');
-                // Add lock badge if not present
                 if (!entryDiv.querySelector('.entry-status.locked')) {
                     const lockBadge = document.createElement('span');
                     lockBadge.className = 'entry-status locked';
@@ -588,7 +847,6 @@ function toggleLock(entryId, btnElement) {
                 btnElement.classList.add('unlocked');
                 btnElement.title = 'Click to lock';
                 entryDiv.classList.remove('locked');
-                // Remove lock badge
                 const lockBadge = entryDiv.querySelector('.entry-status.locked');
                 if (lockBadge) lockBadge.remove();
             }
@@ -602,19 +860,6 @@ function toggleLock(entryId, btnElement) {
         console.error('Error:', error);
         showNotification('Network error. Please try again.', 'error');
     });
-}
-
-// Notification helper
-function showNotification(message, type) {
-    const notif = document.createElement('div');
-    notif.className = `alert alert-${type === 'success' ? 'success' : 'danger'} notification-toast`;
-    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
-    notif.textContent = message;
-    document.body.appendChild(notif);
-    
-    setTimeout(() => {
-        notif.remove();
-    }, 3000);
 }
 
 // Task 3: Conflict Alert Panel Functions
@@ -644,7 +889,6 @@ function autoFixConflicts() {
     .then(data => {
         if (data.success) {
             showNotification(`Auto-fix applied! Resolved ${data.resolved_count || 'some'} conflicts.`, 'success');
-            // Reload page to show updated state
             setTimeout(() => window.location.reload(), 1500);
         } else {
             showNotification(data.message || 'Auto-fix could not resolve all conflicts', 'warning');
@@ -654,6 +898,160 @@ function autoFixConflicts() {
         console.error('Error:', error);
         showNotification('Network error during auto-fix. Please try again.', 'error');
     });
+}
+
+// Task 4: Suggestion Sidebar Functions
+let currentEntryId = null;
+
+function openSuggestionSidebar(entryId) {
+    currentEntryId = entryId;
+    const sidebar = document.getElementById('suggestion-sidebar');
+    const overlay = document.getElementById('suggestion-overlay');
+    
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    
+    loadSuggestions(entryId);
+}
+
+function closeSuggestionSidebar() {
+    const sidebar = document.getElementById('suggestion-sidebar');
+    const overlay = document.getElementById('suggestion-overlay');
+    
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    currentEntryId = null;
+}
+
+function loadSuggestions(entryId) {
+    const container = document.getElementById('suggestion-list');
+    const entryInfo = document.getElementById('sidebar-entry-info');
+    
+    container.innerHTML = '<div class="loading">Loading suggestions...</div>';
+    
+    fetch(`/api/suggest?entry_id=${entryId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.suggestions && data.suggestions.length > 0) {
+                const firstSuggestion = data.suggestions[0];
+                entryInfo.innerHTML = `
+                    <h4>${firstSuggestion.course || 'Course'}</h4>
+                    <p>Section: ${firstSuggestion.section || 'N/A'}</p>
+                    <p>Current: ${firstSuggestion.current_time || 'N/A'} in ${firstSuggestion.current_room || 'N/A'}</p>
+                `;
+                
+                container.innerHTML = data.suggestions.map((sugg, index) => `
+                    <div class="suggestion-item ${index === 0 ? 'best' : index < 3 ? 'good' : ''}" onclick="applySuggestion(${sugg.id || index})">
+                        <div class="suggestion-header">
+                            <span class="suggestion-type">${index === 0 ? '⭐ Best Option' : index < 3 ? '👍 Good Option' : 'Option'}</span>
+                            <span class="preference-indicator">
+                                ${'⭐'.repeat(Math.ceil((sugg.preference_score || 0.5) * 3))}
+                                ${Math.round((sugg.preference_score || 0.5) * 100)}%
+                            </span>
+                        </div>
+                        <div class="suggestion-details">
+                            ${sugg.suggestion_type === 'time_change' ? `📅 ${sugg.new_time || 'New time slot'}` : ''}
+                            ${sugg.suggestion_type === 'room_change' ? `🏫 ${sugg.new_room || 'New room'}` : ''}
+                            ${sugg.suggestion_type === 'room_time_combo' ? `📅 ${sugg.new_time || 'New time'} in 🏫 ${sugg.new_room || 'New room'}` : ''}
+                            ${sugg.suggestion_type === 'faculty_change' ? `👨‍🏫 ${sugg.new_faculty || 'Different faculty'}` : ''}
+                        </div>
+                        <div class="suggestion-meta">
+                            <span>Impact: ${sugg.impact || 'Low'}</span>
+                            <span>Conflicts: ${sugg.resolves_conflicts || 'None'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="no-suggestions">
+                        <h4>No Suggestions Available</h4>
+                        <p>This entry has no conflicts or suggestions at this time.</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading suggestions:', error);
+            container.innerHTML = `
+                <div class="no-suggestions">
+                    <h4>Error Loading Suggestions</h4>
+                    <p>Please try again later.</p>
+                </div>
+            `;
+        });
+}
+
+function applySuggestion(suggestionId) {
+    if (!currentEntryId) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    showNotification('Applying suggestion...', 'info');
+    
+    fetch(`/api/quick-fix/${currentEntryId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ suggestion_id: suggestionId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Suggestion applied successfully!', 'success');
+            closeSuggestionSidebar();
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Could not apply suggestion', 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+function validateAllEntries() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    showNotification('Validating all entries...', 'info');
+    
+    fetch('/api/validate-all/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.valid) {
+            showNotification('All entries are valid! No conflicts found.', 'success');
+        } else {
+            showNotification(`Found ${data.conflict_count || 'some'} conflicts. Please review.`, 'warning');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error validating entries.', 'error');
+    });
+}
+
+// Notification helper
+function showNotification(message, type) {
+    const notif = document.createElement('div');
+    notif.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} notification-toast`;
+    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.remove();
+    }, 3000);
 }
 </script>
 {% endblock %}
