@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+/* PREFERENCE HEATMAP - Task 9 */
+.heatmap-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.heatmap-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.heatmap-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.heatmap-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+/* Instructor Selector */
+.instructor-selector {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+}
+
+.instructor-selector h3 {
+    margin: 0 0 15px 0;
+    color: #4a5568;
+    font-size: 16px;
+}
+
+.instructor-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.instructor-chip {
+    padding: 10px 20px;
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.instructor-chip:hover {
+    background: #edf2f7;
+    border-color: #667eea;
+}
+
+.instructor-chip.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+/* Heatmap Table */
+.heatmap-wrapper {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    overflow-x: auto;
+}
+
+.heatmap-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px;
+}
+
+.heatmap-table th {
+    padding: 15px 10px;
+    text-align: center;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 13px;
+}
+
+.heatmap-table th.time-header {
+    background: #f7fafc;
+    border-radius: 8px;
+    width: 100px;
+}
+
+.heatmap-table th.day-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+}
+
+.heatmap-cell {
+    height: 60px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    position: relative;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+/* Preference Score Colors */
+.pref-excellent {
+    background: #27ae60;
+    color: white;
+}
+
+.pref-good {
+    background: #7ed321;
+    color: white;
+}
+
+.pref-neutral {
+    background: #f5a623;
+    color: white;
+}
+
+.pref-poor {
+    background: #e74c3c;
+    color: white;
+}
+
+.pref-unknown {
+    background: #e2e8f0;
+    color: #718096;
+}
+
+/* Legend */
+.heatmap-legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #4a5568;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+/* Stats Panel */
+.heatmap-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.stat-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+}
+
+.stat-box h4 {
+    margin: 0 0 10px 0;
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.stat-box .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Tooltip */
+.heatmap-tooltip {
+    position: absolute;
+    background: #2d3748;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+.heatmap-tooltip.visible {
+    opacity: 1;
+}
+
+/* Empty State */
+.empty-heatmap {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-heatmap .icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.empty-heatmap h3 {
+    color: #4a5568;
+    margin-bottom: 10px;
+}
+
+.empty-heatmap p {
+    color: #718096;
+}
+</style>
+
+<div class="heatmap-container">
+    <div class="heatmap-header">
+        <h2>🔥 Preference Heatmap</h2>
+        <p>Visualize faculty preferences across different time slots and days</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="heatmap-stats">
+        <div class="stat-box">
+            <h4>Selected Instructor</h4>
+            <div class="stat-value" id="selected-instructor">All</div>
+        </div>
+        <div class="stat-box">
+            <h4>Average Preference</h4>
+            <div class="stat-value" id="avg-preference">--</div>
+        </div>
+        <div class="stat-box">
+            <h4>Best Time Slot</h4>
+            <div class="stat-value" id="best-slot" style="font-size: 18px;">--</div>
+        </div>
+    </div>
+
+    <!-- Instructor Selector -->
+    <div class="instructor-selector">
+        <h3>👨‍🏫 Select Instructor</h3>
+        <div class="instructor-grid">
+            <div class="instructor-chip active" data-instructor="all">All Instructors</div>
+            {% for instructor in instructors %}
+            <div class="instructor-chip" data-instructor="{{ instructor.id }}">{{ instructor.name }}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="heatmap-wrapper">
+        {% if heatmap_data %}
+        <table class="heatmap-table">
+            <thead>
+                <tr>
+                    <th class="time-header">Time / Day</th>
+                    {% for day in days %}
+                    <th class="day-header">{{ day }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for time_slot in time_slots %}
+                <tr>
+                    <th class="time-header">{{ time_slot }}</th>
+                    {% for day in days %}
+                    {% with score=heatmap_data|get_item:day|get_item:time_slot %}
+                    <td>
+                        <div class="heatmap-cell {% if score >= 0.8 %}pref-excellent{% elif score >= 0.6 %}pref-good{% elif score >= 0.4 %}pref-neutral{% elif score > 0 %}pref-poor{% else %}pref-unknown{% endif %}"
+                             data-day="{{ day }}"
+                             data-time="{{ time_slot }}"
+                             data-score="{{ score|default:0 }}"
+                             onmouseover="showTooltip(this)"
+                             onmouseout="hideTooltip()">
+                            {% if score %}{{ score|floatformat:2 }}{% else %}-{% endif %}
+                        </div>
+                    </td>
+                    {% endwith %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Legend -->
+        <div class="heatmap-legend">
+            <div class="legend-item">
+                <div class="legend-color pref-excellent"></div>
+                <span>Excellent (0.8-1.0)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pref-good"></div>
+                <span>Good (0.6-0.8)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pref-neutral"></div>
+                <span>Neutral (0.4-0.6)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pref-poor"></div>
+                <span>Poor (0.0-0.4)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color pref-unknown"></div>
+                <span>No Data</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-heatmap">
+            <div class="icon">📊</div>
+            <h3>No Preference Data</h3>
+            <p>Generate a timetable to see faculty preference heatmaps based on AI analysis.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div style="margin-top: 25px; text-align: center;">
+        <a href="{% url 'timetable_stored' %}" class="btn btn-primary" style="padding: 12px 25px; margin-right: 10px;">📅 View Timetable</a>
+        <button onclick="trainModel()" class="btn btn-secondary" style="padding: 12px 25px;">🤖 Train AI Model</button>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div id="heatmap-tooltip" class="heatmap-tooltip"></div>
+
+<script>
+// Instructor selection
+const instructorChips = document.querySelectorAll('.instructor-chip');
+instructorChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+        instructorChips.forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        const instructorId = this.dataset.instructor;
+        loadHeatmapData(instructorId);
+    });
+});
+
+function loadHeatmapData(instructorId) {
+    document.getElementById('selected-instructor').textContent = 
+        instructorId === 'all' ? 'All Instructors' : 
+        document.querySelector(`[data-instructor="${instructorId}"]`).textContent;
+    
+    // Fetch heatmap data for specific instructor
+    fetch(`/api/preference-heatmap/?instructor=${instructorId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateHeatmap(data.heatmap_data);
+                document.getElementById('avg-preference').textContent = 
+                    (data.avg_preference * 100).toFixed(0) + '%';
+                document.getElementById('best-slot').textContent = data.best_slot || '--';
+            }
+        })
+        .catch(error => console.error('Error loading heatmap:', error));
+}
+
+function updateHeatmap(data) {
+    const cells = document.querySelectorAll('.heatmap-cell');
+    cells.forEach(cell => {
+        const day = cell.dataset.day;
+        const time = cell.dataset.time;
+        const score = data[day]?.[time] || 0;
+        
+        cell.dataset.score = score;
+        cell.textContent = score ? score.toFixed(2) : '-';
+        
+        // Update color class
+        cell.className = 'heatmap-cell';
+        if (score >= 0.8) cell.classList.add('pref-excellent');
+        else if (score >= 0.6) cell.classList.add('pref-good');
+        else if (score >= 0.4) cell.classList.add('pref-neutral');
+        else if (score > 0) cell.classList.add('pref-poor');
+        else cell.classList.add('pref-unknown');
+    });
+}
+
+function showTooltip(cell) {
+    const tooltip = document.getElementById('heatmap-tooltip');
+    const day = cell.dataset.day;
+    const time = cell.dataset.time;
+    const score = parseFloat(cell.dataset.score) || 0;
+    
+    let preferenceText = 'No Data';
+    if (score >= 0.8) preferenceText = 'Excellent';
+    else if (score >= 0.6) preferenceText = 'Good';
+    else if (score >= 0.4) preferenceText = 'Neutral';
+    else if (score > 0) preferenceText = 'Poor';
+    
+    tooltip.innerHTML = `
+        <strong>${day}, ${time}</strong><br>
+        Preference: ${preferenceText}<br>
+        Score: ${score > 0 ? (score * 100).toFixed(0) + '%' : 'N/A'}
+    `;
+    
+    const rect = cell.getBoundingClientRect();
+    tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+    tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+    tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+    document.getElementById('heatmap-tooltip').classList.remove('visible');
+}
+
+function trainModel() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    fetch('/api/train-model/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ AI Model trained successfully!');
+            window.location.reload();
+        } else {
+            alert('❌ ' + (data.message || 'Training failed'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error during training');
+    });
+}
+
+// Load initial stats
+document.addEventListener('DOMContentLoaded', function() {
+    const visibleCells = document.querySelectorAll('.heatmap-cell:not(.pref-unknown)');
+    if (visibleCells.length > 0) {
+        let totalScore = 0;
+        let count = 0;
+        let maxScore = 0;
+        let bestSlot = '';
+        
+        visibleCells.forEach(cell => {
+            const score = parseFloat(cell.dataset.score) || 0;
+            if (score > 0) {
+                totalScore += score;
+                count++;
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestSlot = `${cell.dataset.day} ${cell.dataset.time}`;
+                }
+            }
+        });
+        
+        if (count > 0) {
+            document.getElementById('avg-preference').textContent = 
+                ((totalScore / count) * 100).toFixed(0) + '%';
+            document.getElementById('best-slot').textContent = bestSlot;
+        }
+    }
+});
+</script>
+
+{% endblock %}

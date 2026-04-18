@@ -61,4 +61,8 @@ urlpatterns = [
     
     # CONFLICT LOG PAGE - Task 8
     path('conflict-log/', conflict_log_view, name='conflict_log'),
+    
+    # PREFERENCE HEATMAP - Task 9
+    path('preference-heatmap/', preference_heatmap_view, name='preference_heatmap'),
+    path('api/preference-heatmap/', api_preference_heatmap, name='api_preference_heatmap'),
 ]

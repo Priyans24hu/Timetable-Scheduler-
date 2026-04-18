@@ -1319,6 +1319,109 @@ def conflict_log_view(request):
     return render(request, 'conflict_log.html', context)
 
 
+@login_required
+def preference_heatmap_view(request):
+    """
+    View to display the preference heatmap for instructors.
+    """
+    from .models import Instructor, TimetableEntry, MeetingTime
+    from .services import get_instructor_preference_summary
+    
+    # Get all instructors
+    instructors = Instructor.objects.all()
+    
+    # Get days and time slots
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    time_slots = MeetingTime.objects.values_list('time', flat=True).distinct()
+    
+    # Build heatmap data for all instructors combined
+    heatmap_data = {}
+    for day in days:
+        heatmap_data[day] = {}
+        for time in time_slots:
+            # Get average preference for this slot across all instructors
+            entries = TimetableEntry.objects.filter(
+                meeting_time__time=time,
+                meeting_time__day=day
+            ).select_related('instructor')
+            
+            if entries.exists():
+                avg_pref = entries.filter(preference_score__isnull=False).aggregate(
+                    avg=models.Avg('preference_score')
+                )['avg'] or 0
+                heatmap_data[day][time] = avg_pref
+            else:
+                heatmap_data[day][time] = 0
+    
+    context = {
+        'instructors': instructors,
+        'days': days,
+        'time_slots': time_slots,
+        'heatmap_data': heatmap_data,
+    }
+    
+    return render(request, 'preference_heatmap.html', context)
+
+
+@login_required
+def api_preference_heatmap(request):
+    """
+    API endpoint to get preference heatmap data for a specific instructor.
+    """
+    from .models import TimetableEntry, MeetingTime, Instructor
+    
+    instructor_id = request.GET.get('instructor', 'all')
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    time_slots = list(MeetingTime.objects.values_list('time', flat=True).distinct())
+    
+    heatmap_data = {}
+    total_score = 0
+    count = 0
+    max_score = 0
+    best_slot = ''
+    
+    for day in days:
+        heatmap_data[day] = {}
+        for time in time_slots:
+            if instructor_id == 'all':
+                entries = TimetableEntry.objects.filter(
+                    meeting_time__time=time,
+                    meeting_time__day=day,
+                    preference_score__isnull=False
+                )
+                score = entries.aggregate(avg=models.Avg('preference_score'))['avg'] or 0
+            else:
+                try:
+                    entry = TimetableEntry.objects.get(
+                        instructor_id=instructor_id,
+                        meeting_time__time=time,
+                        meeting_time__day=day
+                    )
+                    score = entry.preference_score or 0
+                except TimetableEntry.DoesNotExist:
+                    score = 0
+            
+            heatmap_data[day][time] = score
+            
+            if score > 0:
+                total_score += score
+                count += 1
+                if score > max_score:
+                    max_score = score
+                    best_slot = f"{day} {time}"
+    
+    avg_preference = total_score / count if count > 0 else 0
+    
+    return JsonResponse({
+        'success': True,
+        'heatmap_data': heatmap_data,
+        'avg_preference': avg_preference,
+        'best_slot': best_slot,
+        'days': days,
+        'time_slots': time_slots,
+    })
+
+
 '''
 Error pages
 '''
