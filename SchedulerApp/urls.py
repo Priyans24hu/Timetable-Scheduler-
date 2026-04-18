@@ -58,4 +58,7 @@ urlpatterns = [
     path('api/toggle-lock/<int:entry_id>', api_toggle_lock, name='api_toggle_lock'),
     path('api/validate-all/', api_validate_all, name='api_validate_all'),
     path('api/conflict-summary', api_get_conflict_summary, name='api_conflict_summary'),
+    
+    # CONFLICT LOG PAGE - Task 8
+    path('conflict-log/', conflict_log_view, name='conflict_log'),
 ]

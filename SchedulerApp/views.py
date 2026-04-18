@@ -1284,6 +1284,41 @@ def api_get_conflict_summary(request):
     })
 
 
+@login_required
+def conflict_log_view(request):
+    """
+    View to display the conflict log page with all conflict history.
+    """
+    from .models import ConflictLog, TimetableEntry
+    
+    # Get all conflicts
+    conflicts = ConflictLog.objects.all().order_by('-detected_at')
+    
+    # Calculate statistics
+    total_conflicts = conflicts.count()
+    resolved_conflicts = conflicts.filter(status='resolved').count()
+    pending_conflicts = conflicts.filter(status='pending').count()
+    
+    # Enrich conflict data with entry details
+    enriched_conflicts = []
+    for conflict in conflicts:
+        try:
+            entry = TimetableEntry.objects.get(entry_id=conflict.entry_id)
+            conflict.entry_details = entry
+        except TimetableEntry.DoesNotExist:
+            conflict.entry_details = None
+        enriched_conflicts.append(conflict)
+    
+    context = {
+        'conflicts': enriched_conflicts,
+        'total_conflicts': total_conflicts,
+        'resolved_conflicts': resolved_conflicts,
+        'pending_conflicts': pending_conflicts,
+    }
+    
+    return render(request, 'conflict_log.html', context)
+
+
 '''
 Error pages
 '''
