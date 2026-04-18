@@ -59,6 +59,12 @@ urlpatterns = [
     path('api/validate-all/', api_validate_all, name='api_validate_all'),
     path('api/conflict-summary', api_get_conflict_summary, name='api_conflict_summary'),
     
+    # BATCH ACTION API ENDPOINTS - Task 10
+    path('api/batch-lock/', api_batch_lock, name='api_batch_lock'),
+    path('api/batch-delete/', api_batch_delete, name='api_batch_delete'),
+    path('api/batch-resolve/', api_batch_resolve, name='api_batch_resolve'),
+    path('api/export-entries/', api_export_entries, name='api_export_entries'),
+    
     # CONFLICT LOG PAGE - Task 8
     path('conflict-log/', conflict_log_view, name='conflict_log'),
     

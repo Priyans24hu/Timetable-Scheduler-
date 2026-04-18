@@ -1422,6 +1422,153 @@ def api_preference_heatmap(request):
     })
 
 
+@login_required
+def api_batch_lock(request):
+    """
+    API endpoint to lock/unlock multiple entries.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        entry_ids = data.get('entry_ids', [])
+        lock = data.get('lock', True)
+        
+        if not entry_ids:
+            return JsonResponse({'success': False, 'message': 'No entries selected'})
+        
+        updated = 0
+        for entry_id in entry_ids:
+            try:
+                entry = TimetableEntry.objects.get(entry_id=entry_id)
+                entry.is_locked = lock
+                entry.save()
+                updated += 1
+            except TimetableEntry.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'updated': updated,
+            'action': 'locked' if lock else 'unlocked'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+def api_batch_delete(request):
+    """
+    API endpoint to delete multiple entries.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        entry_ids = data.get('entry_ids', [])
+        
+        if not entry_ids:
+            return JsonResponse({'success': False, 'message': 'No entries selected'})
+        
+        deleted = 0
+        for entry_id in entry_ids:
+            try:
+                entry = TimetableEntry.objects.get(entry_id=entry_id)
+                entry.delete()
+                deleted += 1
+            except TimetableEntry.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'deleted': deleted
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+def api_batch_resolve(request):
+    """
+    API endpoint to resolve conflicts for multiple entries.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'POST required'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        entry_ids = data.get('entry_ids', [])
+        
+        if not entry_ids:
+            return JsonResponse({'success': False, 'message': 'No entries selected'})
+        
+        from .models import ConflictLog
+        resolved = 0
+        
+        for entry_id in entry_ids:
+            try:
+                entry = TimetableEntry.objects.get(entry_id=entry_id)
+                if entry.has_conflict:
+                    entry.has_conflict = False
+                    entry.save()
+                    resolved += 1
+                
+                # Update conflict logs
+                ConflictLog.objects.filter(entry_id=entry_id).update(status='resolved')
+            except TimetableEntry.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'resolved': resolved
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+def api_export_entries(request):
+    """
+    API endpoint to export selected entries as CSV.
+    """
+    entry_ids = request.GET.get('ids', '')
+    
+    if not entry_ids:
+        return JsonResponse({'success': False, 'message': 'No entries selected'})
+    
+    ids = [int(id) for id in entry_ids.split(',') if id.isdigit()]
+    
+    import csv
+    from django.http import HttpResponse
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="timetable_entries.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Section', 'Course', 'Instructor', 'Room', 'Time', 'Day', 'Locked', 'Has Conflict'])
+    
+    for entry_id in ids:
+        try:
+            entry = TimetableEntry.objects.get(entry_id=entry_id)
+            writer.writerow([
+                entry.entry_id,
+                entry.section.section_id,
+                entry.course.course_name,
+                entry.instructor.name,
+                entry.room.r_number,
+                entry.meeting_time.time,
+                entry.meeting_time.day,
+                'Yes' if entry.is_locked else 'No',
+                'Yes' if entry.has_conflict else 'No'
+            ])
+        except TimetableEntry.DoesNotExist:
+            continue
+    
+    return response
+
+
 '''
 Error pages
 '''

@@ -553,6 +553,106 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
+    /* BATCH ACTION TOOLBAR - Task 10 */
+    .entry-checkbox {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        z-index: 5;
+        opacity: 0.8;
+    }
+
+    .entry-checkbox:hover {
+        opacity: 1;
+    }
+
+    .batch-toolbar {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 12px;
+        padding: 15px 25px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        display: none;
+        align-items: center;
+        gap: 15px;
+        z-index: 1000;
+        border: 1px solid #e2e8f0;
+    }
+
+    .batch-toolbar.active {
+        display: flex;
+    }
+
+    .batch-toolbar .selection-count {
+        font-weight: 600;
+        color: #667eea;
+        padding-right: 15px;
+        border-right: 2px solid #e2e8f0;
+    }
+
+    .batch-toolbar .batch-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .batch-toolbar .batch-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .batch-toolbar .batch-btn.lock {
+        background: #9b59b6;
+        color: white;
+    }
+
+    .batch-toolbar .batch-btn.unlock {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .batch-toolbar .batch-btn.delete {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .batch-toolbar .batch-btn.resolve {
+        background: #27ae60;
+        color: white;
+    }
+
+    .batch-toolbar .batch-btn.export {
+        background: #3498db;
+        color: white;
+    }
+
+    .batch-toolbar .batch-btn.clear {
+        background: #f7fafc;
+        color: #4a5568;
+        border: 2px solid #e2e8f0;
+    }
+
+    .batch-toolbar .batch-btn.select-all {
+        background: #667eea;
+        color: white;
+    }
+
+    .timetable-entry.selected {
+        box-shadow: 0 0 0 3px #667eea !important;
+    }
+
     /* Statistics Panel */
     .stats-panel {
         background-color: #f8f9fa;
@@ -1027,8 +1127,12 @@
                                                 {% if entry.has_conflict %}conflict{% endif %}
                                                 {% if entry.is_locked %}locked{% endif %}
                                                 {{ entry.entry_type }}"
-                                                onclick="openSuggestionSidebar({{ entry.entry_id }})"
+                                                onclick="entryClick(event, {{ entry.entry_id }})"
                                                 data-entry-id="{{ entry.entry_id }}">
+                                            <input type="checkbox" class="entry-checkbox" 
+                                                   value="{{ entry.entry_id }}"
+                                                   onclick="toggleEntrySelection(event, {{ entry.entry_id }})" 
+                                                   title="Select for batch action">
                                             {% if entry.has_conflict %}
                                                 <span class="entry-status conflict" title="Has conflicts">⚠️</span>
                                             {% endif %}
@@ -1641,6 +1745,217 @@ document.addEventListener('click', function(e) {
         </div>
     </div>
 </div>
+
+<!-- BATCH ACTION TOOLBAR - Task 10 -->
+<div id="batch-toolbar" class="batch-toolbar">
+    <span class="selection-count"><span id="selected-count">0</span> selected</span>
+    <button class="batch-btn select-all" onclick="selectAllEntries()">☑️ Select All</button>
+    <button class="batch-btn lock" onclick="batchLock()">🔒 Lock</button>
+    <button class="batch-btn unlock" onclick="batchUnlock()">🔓 Unlock</button>
+    <button class="batch-btn resolve" onclick="batchResolve()">✅ Resolve</button>
+    <button class="batch-btn delete" onclick="batchDelete()">🗑️ Delete</button>
+    <button class="batch-btn export" onclick="batchExport()">📤 Export</button>
+    <button class="batch-btn clear" onclick="clearSelection()">❌ Clear</button>
+</div>
+
+<script>
+// BATCH ACTION FUNCTIONS - Task 10
+let selectedEntries = new Set();
+
+function entryClick(event, entryId) {
+    // If clicking on checkbox, don't open modal
+    if (event.target.classList.contains('entry-checkbox')) {
+        return;
+    }
+    openEntryModal(entryId);
+}
+
+function toggleEntrySelection(event, entryId) {
+    event.stopPropagation();
+    const checkbox = event.target;
+    const entryEl = document.querySelector(`[data-entry-id="${entryId}"]`);
+    
+    if (checkbox.checked) {
+        selectedEntries.add(entryId);
+        entryEl.classList.add('selected');
+    } else {
+        selectedEntries.delete(entryId);
+        entryEl.classList.remove('selected');
+    }
+    
+    updateBatchToolbar();
+}
+
+function updateBatchToolbar() {
+    const toolbar = document.getElementById('batch-toolbar');
+    const countEl = document.getElementById('selected-count');
+    
+    countEl.textContent = selectedEntries.size;
+    
+    if (selectedEntries.size > 0) {
+        toolbar.classList.add('active');
+    } else {
+        toolbar.classList.remove('active');
+    }
+}
+
+function selectAllEntries() {
+    const checkboxes = document.querySelectorAll('.entry-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+        const entryId = parseInt(cb.value);
+        selectedEntries.add(entryId);
+        cb.closest('.timetable-entry').classList.add('selected');
+    });
+    updateBatchToolbar();
+    showNotification(`Selected ${selectedEntries.size} entries`, 'success');
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.entry-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+        cb.closest('.timetable-entry').classList.remove('selected');
+    });
+    selectedEntries.clear();
+    updateBatchToolbar();
+}
+
+function batchLock() {
+    if (selectedEntries.size === 0) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const entryIds = Array.from(selectedEntries);
+    
+    fetch('/api/batch-lock/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ entry_ids: entryIds, lock: true })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`🔒 Locked ${data.updated} entries`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to lock entries', 'error');
+        }
+    })
+    .catch(e => {
+        console.error(e);
+        showNotification('Network error', 'error');
+    });
+}
+
+function batchUnlock() {
+    if (selectedEntries.size === 0) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const entryIds = Array.from(selectedEntries);
+    
+    fetch('/api/batch-lock/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ entry_ids: entryIds, lock: false })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`🔓 Unlocked ${data.updated} entries`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to unlock entries', 'error');
+        }
+    })
+    .catch(e => {
+        console.error(e);
+        showNotification('Network error', 'error');
+    });
+}
+
+function batchDelete() {
+    if (selectedEntries.size === 0) return;
+    if (!confirm(`Delete ${selectedEntries.size} selected entries? This cannot be undone.`)) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const entryIds = Array.from(selectedEntries);
+    
+    fetch('/api/batch-delete/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ entry_ids: entryIds })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`🗑️ Deleted ${data.deleted} entries`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to delete entries', 'error');
+        }
+    })
+    .catch(e => {
+        console.error(e);
+        showNotification('Network error', 'error');
+    });
+}
+
+function batchResolve() {
+    if (selectedEntries.size === 0) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const entryIds = Array.from(selectedEntries);
+    
+    fetch('/api/batch-resolve/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ entry_ids: entryIds })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`✅ Resolved ${data.resolved} conflicts`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to resolve conflicts', 'error');
+        }
+    })
+    .catch(e => {
+        console.error(e);
+        showNotification('Network error', 'error');
+    });
+}
+
+function batchExport() {
+    if (selectedEntries.size === 0) return;
+    
+    const entryIds = Array.from(selectedEntries).join(',');
+    window.open(`/api/export-entries/?ids=${entryIds}`, '_blank');
+    showNotification(`📤 Exporting ${selectedEntries.size} entries`, 'success');
+}
+
+function showNotification(message, type) {
+    const notif = document.createElement('div');
+    notif.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
+    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px;';
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+</script>
+
 {% endblock %}
 
 {% endblock %}
