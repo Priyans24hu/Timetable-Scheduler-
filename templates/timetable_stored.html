@@ -945,6 +945,38 @@
     </div>
 
     <!-- CONFLICT ALERT PANEL - Task 3 -->
+    <!-- FILTER & SEARCH BAR - Task 7 -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search course, section, or faculty..." onkeyup="filterTimetable()">
+        </div>
+        <select id="day-filter" onchange="filterTimetable()">
+            <option value="">All Days</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+        </select>
+        <select id="type-filter" onchange="filterTimetable()">
+            <option value="">All Types</option>
+            <option value="manual">Manual</option>
+            <option value="auto">Auto</option>
+            <option value="hybrid">Hybrid</option>
+        </select>
+        <select id="status-filter" onchange="filterTimetable()">
+            <option value="">All Status</option>
+            <option value="conflict">Has Conflicts</option>
+            <option value="locked">Locked</option>
+            <option value="clean">No Issues</option>
+        </select>
+        <button class="clear-btn" onclick="clearFilters()">Clear</button>
+    </div>
+
+    <div id="filter-results" class="filter-results">
+        Showing <span id="visible-count">0</span> of <span id="total-count">0</span> entries
+    </div>
+
     {% if conflict_count > 0 %}
     <div id="conflict-alert-panel" class="conflict-alert-panel has-conflicts">
         <div class="alert-header">
@@ -1448,6 +1480,93 @@ function deleteEntry() {
 }
 
 // Close modal when clicking overlay
+// FILTER & SEARCH FUNCTIONS - Task 7
+function filterTimetable() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const dayFilter = document.getElementById('day-filter').value;
+    const typeFilter = document.getElementById('type-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
+    
+    const entries = document.querySelectorAll('.timetable-entry');
+    let visibleCount = 0;
+    const totalCount = entries.length;
+    
+    entries.forEach(entry => {
+        let shouldShow = true;
+        
+        // Search filter
+        if (searchTerm) {
+            const text = entry.textContent.toLowerCase();
+            if (!text.includes(searchTerm)) {
+                shouldShow = false;
+            }
+        }
+        
+        // Day filter (check parent row)
+        if (dayFilter && shouldShow) {
+            const row = entry.closest('tr');
+            const dayHeaders = document.querySelectorAll('.fet-timetable th');
+            const cellIndex = Array.from(entry.closest('td').parentNode.children).indexOf(entry.closest('td'));
+            if (dayHeaders[cellIndex]) {
+                const dayText = dayHeaders[cellIndex].textContent.trim();
+                if (!dayText.includes(dayFilter)) {
+                    shouldShow = false;
+                }
+            }
+        }
+        
+        // Type filter
+        if (typeFilter && shouldShow) {
+            if (!entry.classList.contains(typeFilter)) {
+                shouldShow = false;
+            }
+        }
+        
+        // Status filter
+        if (statusFilter && shouldShow) {
+            if (statusFilter === 'conflict' && !entry.classList.contains('conflict')) {
+                shouldShow = false;
+            } else if (statusFilter === 'locked' && !entry.classList.contains('locked')) {
+                shouldShow = false;
+            } else if (statusFilter === 'clean' && (entry.classList.contains('conflict') || entry.classList.contains('locked'))) {
+                shouldShow = false;
+            }
+        }
+        
+        if (shouldShow) {
+            entry.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            entry.classList.add('hidden');
+        }
+    });
+    
+    // Update results counter
+    document.getElementById('visible-count').textContent = visibleCount;
+    document.getElementById('total-count').textContent = totalCount;
+    
+    const resultsDiv = document.getElementById('filter-results');
+    if (searchTerm || dayFilter || typeFilter || statusFilter) {
+        resultsDiv.classList.add('active');
+    } else {
+        resultsDiv.classList.remove('active');
+    }
+}
+
+function clearFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('day-filter').value = '';
+    document.getElementById('type-filter').value = '';
+    document.getElementById('status-filter').value = '';
+    filterTimetable();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof loadDashboardData === 'function') loadDashboardData();
+    if (typeof loadFilterStats === 'function') loadFilterStats();
+});
+
+// Close modal on overlay click
 document.addEventListener('click', function(e) {
     if (e.target.id === 'entry-modal-overlay') {
         closeEntryModal();
