@@ -1,0 +1,1150 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load index %}
+
+{% block content %}
+
+<style>
+/* ===== IMPORT DATA PAGE ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+.import-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.import-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 35px 40px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.import-header .icon { font-size: 48px; }
+.import-header h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; }
+.import-header p  { margin: 0; opacity: 0.8; font-size: 14px; }
+
+/* Tabs */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #f1f3f9;
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 28px;
+}
+.tab-btn {
+    flex: 1;
+    padding: 12px 18px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.tab-btn.active {
+    background: white;
+    color: #0f3460;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+.tab-btn:hover:not(.active) { background: #e8ecf4; }
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Card */
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+}
+.card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Category selector */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.category-card {
+    padding: 18px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+}
+.category-card:hover { border-color: #0f3460; background: #f0f4ff; }
+.category-card.selected {
+    border-color: #0f3460;
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    color: white;
+}
+.category-card .cat-icon { font-size: 28px; margin-bottom: 8px; }
+.category-card .cat-name { font-size: 13px; font-weight: 600; }
+.category-card .cat-count { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+/* Drop zone */
+.drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 50px 30px;
+    text-align: center;
+    transition: all 0.2s;
+    background: #f8fafc;
+    cursor: pointer;
+}
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: #0f3460;
+    background: #f0f4ff;
+}
+.drop-zone .dz-icon { font-size: 48px; margin-bottom: 14px; }
+.drop-zone h3 { margin: 0 0 8px; color: #334155; font-size: 16px; }
+.drop-zone p  { margin: 0 0 16px; color: #94a3b8; font-size: 13px; }
+.drop-zone input[type=file] { display: none; }
+
+/* CSV format hints */
+.format-hint {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+}
+.format-hint h4 { margin: 0 0 10px; color: #166534; font-size: 13px; font-weight: 700; }
+.format-hint code {
+    display: block;
+    background: #dcfce7;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #166534;
+    font-family: 'Courier New', monospace;
+    line-height: 1.6;
+}
+.format-hint .dl-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #16a34a;
+    font-size: 12px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Preview table */
+.preview-section { margin-top: 24px; display: none; }
+.preview-section h4 { font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; }
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.preview-table th {
+    background: #1a1a2e;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+}
+.preview-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+.preview-table tr:nth-child(even) td { background: #f8fafc; }
+.preview-table tr.row-error td { background: #fef2f2; color: #dc2626; }
+.preview-table tr.row-ok td { }
+
+.badge-ok  { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-err { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-dup { background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+/* Manual entry form */
+.entry-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+@media (max-width: 680px) { .entry-form-grid { grid-template-columns: 1fr; } }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 600; color: #374151; }
+.form-group select,
+.form-group input {
+    padding: 11px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    background: white;
+    transition: border-color 0.2s;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+}
+.form-group select:focus,
+.form-group input:focus { border-color: #0f3460; }
+
+/* Conflict indicator */
+.conflict-indicator {
+    display: none;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-top: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.conflict-indicator.has-conflict {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+}
+.conflict-indicator.no-conflict {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #16a34a;
+}
+
+/* Buttons */
+.btn {
+    padding: 11px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    color: white;
+    box-shadow: 0 4px 14px rgba(15,52,96,0.3);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(15,52,96,0.4); }
+.btn-success {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+}
+.btn-success:hover { transform: translateY(-1px); }
+.btn-outline {
+    background: white;
+    color: #0f3460;
+    border: 2px solid #0f3460;
+}
+.btn-outline:hover { background: #f0f4ff; }
+.btn-danger  { background: #dc2626; color: white; }
+.btn-sm      { padding: 7px 14px; font-size: 12px; }
+
+/* Import result */
+.import-result {
+    display: none;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+.import-result.success { background: #f0fdf4; border: 1px solid #86efac; }
+.import-result.error   { background: #fef2f2; border: 1px solid #fca5a5; }
+.import-result h4 { margin: 0 0 10px; }
+.import-result ul { margin: 0; padding-left: 20px; font-size: 13px; color: #475569; }
+
+/* Action bar */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid #f1f5f9;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Stats bar */
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border-left: 4px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.stat-card:nth-child(2){ border-left-color: #7c3aed; }
+.stat-card:nth-child(3){ border-left-color: #059669; }
+.stat-card:nth-child(4){ border-left-color: #d97706; }
+.stat-card:nth-child(5){ border-left-color: #db2777; }
+.stat-card .s-val { font-size: 28px; font-weight: 800; color: #1e293b; }
+.stat-card .s-lbl { font-size: 12px; color: #64748b; font-weight: 500; }
+
+/* Spinner */
+.spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="import-container">
+
+    <!-- Header -->
+    <div class="import-header">
+        <div class="icon">📥</div>
+        <div>
+            <h1>Import & Manage Timetable Data</h1>
+            <p>Upload data via CSV or manually add individual timetable entries — no scripts required</p>
+        </div>
+    </div>
+
+    <!-- Live Stats -->
+    <div class="stats-bar">
+        <div class="stat-card"><div class="s-val" id="stat-rooms">{{ db_stats.rooms }}</div><div class="s-lbl">🏫 Rooms</div></div>
+        <div class="stat-card"><div class="s-val" id="stat-instructors">{{ db_stats.instructors }}</div><div class="s-lbl">👨‍🏫 Instructors</div></div>
+        <div class="stat-card"><div class="s-val" id="stat-courses">{{ db_stats.courses }}</div><div class="s-lbl">📚 Courses</div></div>
+        <div class="stat-card"><div class="s-val" id="stat-sections">{{ db_stats.sections }}</div><div class="s-lbl">🎓 Sections</div></div>
+        <div class="stat-card"><div class="s-val" id="stat-entries">{{ db_stats.entries }}</div><div class="s-lbl">📅 Timetable Entries</div></div>
+    </div>
+
+    <!-- ★★★ GENERATE SCHEDULE PANEL ★★★ -->
+    <div id="generate-panel" style="
+        background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #1a1a2e 100%);
+        border-radius: 18px;
+        padding: 32px 36px;
+        margin-bottom: 28px;
+        box-shadow: 0 12px 40px rgba(15,52,96,0.35);
+        position: relative;
+        overflow: hidden;">
+        <!-- Decorative glow -->
+        <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;
+            background:radial-gradient(circle,rgba(124,58,237,0.25),transparent 70%);pointer-events:none;"></div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;">
+            <div style="flex:1;min-width:260px;">
+                <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">
+                    ✨ Smart Scheduler
+                </div>
+                <h2 style="margin:0 0 10px;font-size:24px;font-weight:800;color:white;">
+                    Generate Lecture Schedule
+                </h2>
+                <p style="margin:0;color:rgba(255,255,255,0.7);font-size:14px;line-height:1.6;">
+                    Automatically generates individual timetables for each section.<br>
+                    <strong style="color:#a5f3fc;">3 lectures/week</strong> per theory course &nbsp;&middot;&nbsp;
+                    <strong style="color:#a5f3fc;">2-hour lab blocks</strong> on one day &nbsp;&middot;&nbsp;
+                    <strong style="color:#a5f3fc;">1-hr lunch</strong> auto-placed within 12:00&ndash;2:00 PM
+                </p>
+            </div>
+
+            <!-- Controls column -->
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:260px;">
+                <!-- Lectures per week -->
+                <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:14px 18px;">
+                    <label style="font-size:12px;font-weight:700;color:#c4b5fd;display:block;margin-bottom:8px;">
+                        📊 Theory Lectures / Week
+                    </label>
+                    <div style="display:flex;gap:8px;">
+                        {% for n in "123" %}
+                        <button class="lpw-btn {% if forloop.first %}active{% endif %}"
+                                id="lpw-{{ forloop.counter }}"
+                                onclick="setLpw({{ forloop.counter }}, this)"
+                                style="flex:1;padding:8px;border:2px solid {% if forloop.first %}white{% else %}rgba(255,255,255,0.3){% endif %};
+                                    background:{% if forloop.first %}white{% else %}transparent{% endif %};
+                                    color:{% if forloop.first %}#0f3460{% else %}white{% endif %};
+                                    border-radius:8px;font-weight:800;font-size:16px;cursor:pointer;transition:all 0.2s;">
+                            {{ forloop.counter }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="lpw-value" value="3">
+                </div>
+
+                <!-- Section selector -->
+                <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:14px 18px;">
+                    <label style="font-size:12px;font-weight:700;color:#c4b5fd;display:block;margin-bottom:8px;">
+                        🎓 Generate For Sections
+                    </label>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;" id="section-checkboxes">
+                        {% for sec in sections %}
+                        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;
+                            background:rgba(255,255,255,0.12);padding:5px 10px;border-radius:20px;
+                            font-size:12px;font-weight:600;color:white;white-space:nowrap;">
+                            <input type="checkbox" value="{{ sec.section_id }}" checked
+                                style="accent-color:#a78bfa;width:13px;height:13px;">
+                            {{ sec.section_id }}
+                        </label>
+                        {% empty %}
+                        <span style="color:rgba(255,255,255,0.5);font-size:13px;">No sections found — import sections first</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate button + progress log -->
+        <div style="margin-top:22px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <button id="gen-btn" onclick="generateSchedule()"
+                style="padding:14px 32px;font-size:16px;font-weight:800;
+                    background:linear-gradient(135deg, #a78bfa, #7c3aed);
+                    color:white;border:none;border-radius:12px;cursor:pointer;
+                    box-shadow:0 6px 24px rgba(124,58,237,0.5);
+                    transition:all 0.2s;font-family:'Inter',sans-serif;
+                    display:flex;align-items:center;gap:10px;">
+                ⚡ Generate Lecture Schedule
+            </button>
+            <button onclick="setupMeetingTimesOnly()"
+                style="padding:14px 22px;font-size:14px;font-weight:600;
+                    background:rgba(255,255,255,0.15);color:white;
+                    border:1px solid rgba(255,255,255,0.3);border-radius:12px;
+                    cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;">
+                ⚙️ Reset Time Slots Only
+            </button>
+        </div>
+
+        <!-- Progress log -->
+        <div id="gen-log-wrap" style="display:none;margin-top:20px;
+            background:rgba(0,0,0,0.35);border-radius:12px;padding:16px 20px;
+            max-height:200px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;">
+            <div id="gen-log"></div>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('csv')" id="tab-csv">📂 CSV Import</button>
+        <button class="tab-btn" onclick="switchTab('manual')" id="tab-manual">✏️ Manual Entry</button>
+        <button class="tab-btn" onclick="switchTab('manage')" id="tab-manage">⚙️ Manage Data</button>
+    </div>
+
+    <!-- ======================= TAB 1: CSV IMPORT ======================= -->
+    <div class="tab-panel active" id="panel-csv">
+        <div class="card">
+            <h2 class="card-title">📂 Import via CSV</h2>
+
+            <!-- Category selector -->
+            <p style="color:#64748b; font-size:14px; margin-bottom:16px;">Select what type of data you're uploading:</p>
+            <div class="category-grid">
+                <div class="category-card" onclick="selectCategory('rooms', this)">
+                    <div class="cat-icon">🏫</div>
+                    <div class="cat-name">Rooms</div>
+                    <div class="cat-count">{{ db_stats.rooms }} in DB</div>
+                </div>
+                <div class="category-card" onclick="selectCategory('instructors', this)">
+                    <div class="cat-icon">👨‍🏫</div>
+                    <div class="cat-name">Instructors</div>
+                    <div class="cat-count">{{ db_stats.instructors }} in DB</div>
+                </div>
+                <div class="category-card" onclick="selectCategory('courses', this)">
+                    <div class="cat-icon">📚</div>
+                    <div class="cat-name">Courses</div>
+                    <div class="cat-count">{{ db_stats.courses }} in DB</div>
+                </div>
+                <div class="category-card" onclick="selectCategory('sections', this)">
+                    <div class="cat-icon">🎓</div>
+                    <div class="cat-name">Sections</div>
+                    <div class="cat-count">{{ db_stats.sections }} in DB</div>
+                </div>
+                <div class="category-card" onclick="selectCategory('timetable', this)">
+                    <div class="cat-icon">📅</div>
+                    <div class="cat-name">Timetable</div>
+                    <div class="cat-count">{{ db_stats.entries }} entries</div>
+                </div>
+            </div>
+
+            <!-- Format hints (hidden, shown by JS) -->
+            <div id="fmt-rooms" class="format-hint" style="display:none;">
+                <h4>📋 Required CSV columns for Rooms:</h4>
+                <code>r_number, seating_capacity, room_type<br>
+# room_type: Classroom | Lab | Computer Lab | AI Lab | ML Lab<br>
+# Example:<br>
+401, 60, Classroom<br>
+LAB-402, 30, Lab</code>
+                <a href="#" class="dl-link" onclick="downloadTemplate('rooms')">⬇ Download Template</a>
+            </div>
+            <div id="fmt-instructors" class="format-hint" style="display:none;">
+                <h4>📋 Required CSV columns for Instructors:</h4>
+                <code>uid, name, specialization, max_courses_per_semester<br>
+# Example:<br>
+RH, Dr. R Hemant, Machine Learning, 4<br>
+NS, Prof. N Sharma, Deep Learning, 3</code>
+                <a href="#" class="dl-link" onclick="downloadTemplate('instructors')">⬇ Download Template</a>
+            </div>
+            <div id="fmt-courses" class="format-hint" style="display:none;">
+                <h4>📋 Required CSV columns for Courses:</h4>
+                <code>course_number, course_name, course_type, instructor_uids<br>
+# course_type: Theory | Lab | Theory+Lab<br>
+# instructor_uids: comma-separated UIDs in quotes<br>
+# Example:<br>
+ML001, Machine Learning, Theory, "RH;NS"<br>
+LAB01, ML Lab, Lab, RH</code>
+                <a href="#" class="dl-link" onclick="downloadTemplate('courses')">⬇ Download Template</a>
+            </div>
+            <div id="fmt-sections" class="format-hint" style="display:none;">
+                <h4>📋 Required CSV columns for Sections:</h4>
+                <code>section_id, department_id, strength, num_class_in_week<br>
+# department_id: numeric ID of the department<br>
+# Example:<br>
+4AIML-A, 1, 60, 35<br>
+6AIML-B, 1, 55, 35</code>
+                <a href="#" class="dl-link" onclick="downloadTemplate('sections')">⬇ Download Template</a>
+            </div>
+            <div id="fmt-timetable" class="format-hint" style="display:none;">
+                <h4>📋 Required CSV columns for Timetable Entries:</h4>
+                <code>section_id, course_number, instructor_uid, room_number, day, time_slot<br>
+# day: Monday|Tuesday|Wednesday|Thursday|Friday<br>
+# time_slot: exact time string, e.g. "9:05 - 10:00"<br>
+# Example:<br>
+4AIML-A, ML001, RH, 401, Monday, "9:05 - 10:00"<br>
+6AIML-A, CV001, NS, LAB-402, Tuesday, "10:00 - 10:55"</code>
+                <a href="#" class="dl-link" onclick="downloadTemplate('timetable')">⬇ Download Template</a>
+            </div>
+
+            <!-- Drop Zone -->
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()"
+                 ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                <div class="dz-icon">📄</div>
+                <h3>Drop your CSV file here</h3>
+                <p>or click to browse</p>
+                <button class="btn btn-outline btn-sm" type="button">Choose File</button>
+                <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleFileSelect(event)">
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-section" id="preview-section">
+                <h4 id="preview-title">Preview (first 10 rows)</h4>
+                <div style="overflow-x:auto;">
+                    <table class="preview-table" id="preview-table">
+                        <thead id="preview-head"></thead>
+                        <tbody id="preview-body"></tbody>
+                    </table>
+                </div>
+                <div id="import-result" class="import-result"></div>
+                <div class="action-bar">
+                    <span id="preview-summary" style="font-size:13px;color:#64748b;"></span>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-outline" onclick="clearFile()">✖ Clear</button>
+                        <button class="btn btn-success" id="import-btn" onclick="confirmImport()">
+                            ✅ Import Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= TAB 2: MANUAL ENTRY ======================= -->
+    <div class="tab-panel" id="panel-manual">
+        <div class="card">
+            <h2 class="card-title">✏️ Add Timetable Entry Manually</h2>
+            <p style="color:#64748b; font-size:14px; margin-bottom:24px;">Select section, course, instructor, room, day, and time slot. Live conflict checking runs before saving.</p>
+
+            <form id="manual-entry-form" onsubmit="return false;">
+                {% csrf_token %}
+                <div class="entry-form-grid">
+                    <div class="form-group">
+                        <label>🎓 Section *</label>
+                        <select id="m-section" onchange="checkConflict()" required>
+                            <option value="">-- Select Section --</option>
+                            {% for sec in sections %}
+                            <option value="{{ sec.section_id }}">{{ sec.section_id }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📚 Course *</label>
+                        <select id="m-course" onchange="checkConflict()" required>
+                            <option value="">-- Select Course --</option>
+                            {% for course in courses %}
+                            <option value="{{ course.course_number }}">{{ course.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>👨‍🏫 Instructor *</label>
+                        <select id="m-instructor" onchange="checkConflict()" required>
+                            <option value="">-- Select Instructor --</option>
+                            {% for inst in instructors %}
+                            <option value="{{ inst.id }}">{{ inst.name }} ({{ inst.uid }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🏫 Room *</label>
+                        <select id="m-room" onchange="checkConflict()" required>
+                            <option value="">-- Select Room --</option>
+                            {% for room in rooms %}
+                            <option value="{{ room.id }}">{{ room.r_number }} (Cap: {{ room.seating_capacity }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📅 Day *</label>
+                        <select id="m-day" onchange="checkConflict()" required>
+                            <option value="">-- Select Day --</option>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>⏰ Time Slot *</label>
+                        <select id="m-time" onchange="checkConflict()" required>
+                            <option value="">-- Select Time --</option>
+                            {% for mt in meeting_times %}
+                            <option value="{{ mt.pid }}">{{ mt.day }} — {{ mt.time }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Conflict indicator -->
+                <div class="conflict-indicator" id="conflict-indicator"></div>
+
+                <div class="action-bar">
+                    <span style="font-size:13px;color:#94a3b8;">All fields marked * are required</span>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-outline" onclick="clearManualForm()">✖ Clear</button>
+                        <button class="btn btn-primary" id="save-entry-btn" onclick="saveManualEntry()">
+                            💾 Save Entry
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Recent additions -->
+            <div id="recent-additions" style="margin-top:30px; display:none;">
+                <h3 style="font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:14px;">✅ Recently Added</h3>
+                <table class="preview-table" id="recent-table">
+                    <thead>
+                        <tr>
+                            <th>Section</th><th>Course</th><th>Instructor</th><th>Room</th><th>Day</th><th>Time</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= TAB 3: MANAGE DATA ======================= -->
+    <div class="tab-panel" id="panel-manage">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <!-- Quick links to existing edit pages -->
+            <div class="card">
+                <h2 class="card-title">📊 Manage Existing Data</h2>
+                <p style="color:#64748b;font-size:13px;margin-bottom:20px;">Use the links below to view, edit, or delete records through the standard admin forms.</p>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <a href="{% url 'roomEdit' %}" class="btn btn-outline" style="text-decoration:none;">🏫 Manage Rooms ({{ db_stats.rooms }})</a>
+                    <a href="{% url 'instructorEdit' %}" class="btn btn-outline" style="text-decoration:none;">👨‍🏫 Manage Instructors ({{ db_stats.instructors }})</a>
+                    <a href="{% url 'courseEdit' %}" class="btn btn-outline" style="text-decoration:none;">📚 Manage Courses ({{ db_stats.courses }})</a>
+                    <a href="{% url 'departmentEdit' %}" class="btn btn-outline" style="text-decoration:none;">🏢 Manage Departments</a>
+                    <a href="{% url 'sectionEdit' %}" class="btn btn-outline" style="text-decoration:none;">🎓 Manage Sections ({{ db_stats.sections }})</a>
+                    <a href="{% url 'meetingTimeEdit' %}" class="btn btn-outline" style="text-decoration:none;">⏰ Manage Meeting Times ({{ db_stats.meeting_times }})</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🗑️ Clear Timetable Data</h2>
+                <p style="color:#64748b;font-size:13px;margin-bottom:20px;">Danger zone — use these actions to clear specific types of data. All actions are reversible through re-import.</p>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="background:#fef2f2;border-radius:10px;padding:16px;">
+                        <p style="margin:0 0 10px;font-size:13px;color:#dc2626;font-weight:600;">⚠️ Clear Active Timetable Entries</p>
+                        <p style="margin:0 0 12px;font-size:12px;color:#7f1d1d;">This will delete all timetable entries ({{ db_stats.entries }} entries). Rooms, courses, instructors will be preserved.</p>
+                        <button class="btn btn-danger btn-sm" onclick="clearTimetable()">🗑️ Clear Timetable</button>
+                    </div>
+                    <div style="background:#fefce8;border-radius:10px;padding:16px;">
+                        <p style="margin:0 0 10px;font-size:13px;color:#92400e;font-weight:600;">↩️ Run Conflict Detection</p>
+                        <p style="margin:0 0 12px;font-size:12px;color:#78350f;">Scan all timetable entries and log any conflicts found.</p>
+                        <button class="btn btn-sm" style="background:#f59e0b;color:white;" onclick="runConflictDetection()">🔍 Detect Conflicts</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let selectedCategory = '';
+let parsedRows = [];
+let csvHeaders = [];
+
+/* ===== Tabs ===== */
+function switchTab(tab) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+}
+
+/* ===== Category selector ===== */
+function selectCategory(cat, el) {
+    selectedCategory = cat;
+    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    // Show format hint
+    ['rooms','instructors','courses','sections','timetable'].forEach(c => {
+        document.getElementById('fmt-' + c).style.display = (c === cat) ? 'block' : 'none';
+    });
+    // Filter meeting time dropdown based on day selection if timetable
+    clearFile();
+}
+
+/* ===== Drag & drop ===== */
+function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('dragover');
+}
+function handleDragLeave(e) {
+    document.getElementById('drop-zone').classList.remove('dragover');
+}
+function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+}
+function handleFileSelect(e) {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+}
+
+/* ===== CSV parse ===== */
+function processFile(file) {
+    if (!selectedCategory) {
+        alert('⚠️ Please select a data category first (Rooms, Instructors, etc.)');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        parseCSV(text);
+    };
+    reader.readAsText(file);
+}
+
+function parseCSV(text) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+    if (lines.length < 2) { alert('CSV must have at least a header row and one data row.'); return; }
+
+    csvHeaders = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    parsedRows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const cols = splitCSVLine(lines[i]);
+        if (cols.length === 0) continue;
+        const row = {};
+        csvHeaders.forEach((h, idx) => { row[h] = (cols[idx] || '').trim().replace(/^"|"$/g, ''); });
+        parsedRows.push(row);
+    }
+
+    renderPreview();
+}
+
+function splitCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let ch of line) {
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+        else { current += ch; }
+    }
+    result.push(current);
+    return result;
+}
+
+function renderPreview() {
+    const previewSection = document.getElementById('preview-section');
+    const head = document.getElementById('preview-head');
+    const body = document.getElementById('preview-body');
+
+    // Headers
+    head.innerHTML = '<tr>' + csvHeaders.map(h => `<th>${h}</th>`).join('') + '<th>Status</th></tr>';
+
+    // Body (first 10 rows)
+    body.innerHTML = '';
+    const display = parsedRows.slice(0, 10);
+    display.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = csvHeaders.map(h => `<td>${row[h] || ''}</td>`).join('');
+        tr.innerHTML += '<td><span class="badge-ok">Ready</span></td>';
+        body.appendChild(tr);
+    });
+
+    document.getElementById('preview-title').textContent =
+        `Preview — ${parsedRows.length} row(s) found (showing first 10)`;
+    document.getElementById('preview-summary').textContent =
+        `${parsedRows.length} rows ready to import as ${selectedCategory}`;
+    previewSection.style.display = 'block';
+    document.getElementById('import-result').style.display = 'none';
+}
+
+function clearFile() {
+    parsedRows = [];
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('csv-file').value = '';
+}
+
+/* ===== Confirm import ===== */
+async function confirmImport() {
+    if (!parsedRows.length || !selectedCategory) { alert('No data to import.'); return; }
+    const btn = document.getElementById('import-btn');
+    btn.innerHTML = '<span class="spinner"></span> Importing...';
+    btn.disabled = true;
+
+    try {
+        const resp = await fetch('/api/import-csv/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ category: selectedCategory, rows: parsedRows })
+        });
+        const data = await resp.json();
+        showImportResult(data);
+        if (data.success) refreshStats();
+    } catch(e) {
+        showImportResult({ success: false, message: 'Network error: ' + e.message, errors: [] });
+    }
+    btn.innerHTML = '✅ Import Data';
+    btn.disabled = false;
+}
+
+function showImportResult(data) {
+    const el = document.getElementById('import-result');
+    el.style.display = 'block';
+    if (data.success) {
+        el.className = 'import-result success';
+        el.innerHTML = `<h4>✅ Import Complete</h4>
+            <ul>
+                <li>Created: <strong>${data.created || 0}</strong></li>
+                <li>Updated/Skipped: <strong>${data.skipped || 0}</strong></li>
+                ${data.errors && data.errors.length ? '<li style="color:#dc2626">Errors: ' + data.errors.join(', ') + '</li>' : ''}
+            </ul>`;
+    } else {
+        el.className = 'import-result error';
+        el.innerHTML = `<h4>❌ Import Failed</h4><p style="font-size:13px;margin:0;">${data.message}</p>
+            ${data.errors ? '<ul>' + data.errors.map(e => `<li>${e}</li>`).join('') + '</ul>' : ''}`;
+    }
+}
+
+/* ===== Manual entry ===== */
+let conflictCheckTimer = null;
+function checkConflict() {
+    clearTimeout(conflictCheckTimer);
+    conflictCheckTimer = setTimeout(_doConflictCheck, 500);
+}
+
+async function _doConflictCheck() {
+    const instructor = document.getElementById('m-instructor').value;
+    const room = document.getElementById('m-room').value;
+    const section = document.getElementById('m-section').value;
+    const time = document.getElementById('m-time').value;
+    const indicator = document.getElementById('conflict-indicator');
+
+    if (!instructor || !room || !section || !time) { indicator.style.display = 'none'; return; }
+
+    try {
+        const resp = await fetch('/api/check-conflict/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ instructor_id: parseInt(instructor), room_id: parseInt(room),
+                                   section_id: section, meeting_time_id: time })
+        });
+        const data = await resp.json();
+        if (data.has_conflict) {
+            const msgs = data.conflicts.hard.map(c => c.message).join('; ');
+            indicator.className = 'conflict-indicator has-conflict';
+            indicator.innerHTML = `⚠️ <strong>Conflict Detected:</strong> ${msgs}`;
+        } else {
+            indicator.className = 'conflict-indicator no-conflict';
+            indicator.innerHTML = `✅ No conflicts — this slot is available`;
+        }
+        indicator.style.display = 'flex';
+    } catch(e) { indicator.style.display = 'none'; }
+}
+
+async function saveManualEntry() {
+    const section    = document.getElementById('m-section').value;
+    const course     = document.getElementById('m-course').value;
+    const instructor = document.getElementById('m-instructor').value;
+    const room       = document.getElementById('m-room').value;
+    const meeting_time = document.getElementById('m-time').value;
+
+    if (!section || !course || !instructor || !room || !meeting_time) {
+        alert('Please fill all required fields.'); return;
+    }
+    const btn = document.getElementById('save-entry-btn');
+    btn.innerHTML = '<span class="spinner"></span> Saving...';
+    btn.disabled = true;
+
+    try {
+        const resp = await fetch('/api/add-entry/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ section_id: section, course_number: course,
+                                   instructor_id: parseInt(instructor), room_id: parseInt(room),
+                                   meeting_time_id: meeting_time })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            addToRecentTable(data.entry);
+            clearManualForm();
+            refreshStats();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    } catch(e) { alert('Network error: ' + e.message); }
+
+    btn.innerHTML = '💾 Save Entry';
+    btn.disabled = false;
+}
+
+function addToRecentTable(entry) {
+    const tbody = document.getElementById('recent-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${entry.section}</td><td>${entry.course}</td><td>${entry.instructor}</td>
+        <td>${entry.room}</td><td>${entry.day}</td><td>${entry.time}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteEntry(${entry.id}, this)">🗑</button></td>`;
+    tbody.prepend(tr);
+    document.getElementById('recent-additions').style.display = 'block';
+}
+
+async function deleteEntry(id, btn) {
+    if (!confirm('Delete this entry?')) return;
+    const resp = await fetch(`/api/update-entry/${id}/`, {
+        method: 'DELETE', headers: { 'X-CSRFToken': CSRF }
+    });
+    const data = await resp.json();
+    if (data.success) { btn.closest('tr').remove(); refreshStats(); }
+    else alert('Failed to delete: ' + data.message);
+}
+
+function clearManualForm() {
+    ['m-section','m-course','m-instructor','m-room','m-day','m-time'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('conflict-indicator').style.display = 'none';
+}
+
+/* ===== Manage tab ===== */
+async function clearTimetable() {
+    if (!confirm('⚠️ This will delete ALL timetable entries. Are you sure?')) return;
+    const resp = await fetch('/api/batch-delete/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ entry_ids: 'ALL_ACTIVE' })
+    });
+    const data = await resp.json();
+    if (data.success) { alert('✅ Timetable cleared.'); refreshStats(); }
+    else alert('Error: ' + (data.message || 'Unknown error'));
+}
+
+async function runConflictDetection() {
+    const resp = await fetch('/api/validate-all/', {
+        method: 'POST', headers: { 'X-CSRFToken': CSRF }
+    });
+    const data = await resp.json();
+    if (data.success) {
+        alert(`✅ Conflict detection complete!\nConflicts found: ${data.conflicts_found || 0}\nEntries checked: ${data.total_checked || 0}`);
+    } else { alert('Error running detection.'); }
+}
+
+/* ===== Stats refresh ===== */
+async function refreshStats() {
+    try {
+        const resp = await fetch('/api/conflict-summary/');
+        const data = await resp.json();
+        if (data.total_entries !== undefined) {
+            document.getElementById('stat-entries').textContent = data.total_entries;
+        }
+    } catch(e) {}
+}
+
+/* ===== Day filter for time dropdown ===== */
+document.getElementById('m-day').addEventListener('change', function() {
+    const day = this.value;
+    const sel = document.getElementById('m-time');
+    const opts = sel.querySelectorAll('option');
+    opts.forEach(opt => {
+        if (!opt.value) return;
+        opt.style.display = (!day || opt.text.startsWith(day)) ? '' : 'none';
+    });
+    sel.value = '';
+});
+
+/* ===== Download template ===== */
+function downloadTemplate(category) {
+    const templates = {
+        rooms: 'r_number,seating_capacity,room_type\n401,60,Classroom\n402,30,Lab',
+        instructors: 'uid,name,specialization,max_courses_per_semester\nRH,Dr R Hemant,Machine Learning,4',
+        courses: 'course_number,course_name,course_type,instructor_uids\nML001,Machine Learning,Theory,RH;NS',
+        sections: 'section_id,department_id,strength,num_class_in_week\n4AIML-A,1,60,35',
+        timetable: 'section_id,course_number,instructor_uid,room_number,day,time_slot\n4AIML-A,ML001,RH,401,Monday,9:05 - 10:00'
+    };
+    const blob = new Blob([templates[category]], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `template_${category}.csv`;
+    a.click();
+}
+
+/* ===== Lectures-per-week selector ===== */
+function setLpw(n, btn) {
+    document.getElementById('lpw-value').value = n;
+    document.querySelectorAll('.lpw-btn').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color      = 'white';
+        b.style.borderColor = 'rgba(255,255,255,0.3)';
+    });
+    btn.style.background  = 'white';
+    btn.style.color       = '#0f3460';
+    btn.style.borderColor = 'white';
+}
+
+/* ===== Progress log helper ===== */
+function genLog(msg, color='#a5f3fc') {
+    const wrap = document.getElementById('gen-log-wrap');
+    const log  = document.getElementById('gen-log');
+    wrap.style.display = 'block';
+    const ts = new Date().toLocaleTimeString();
+    log.innerHTML += `<div style="color:${color};margin-bottom:4px;">[${ts}] ${msg}</div>`;
+    wrap.scrollTop = wrap.scrollHeight;
+}
+
+/* ===== Reset meeting times only ===== */
+async function setupMeetingTimesOnly() {
+    if (!confirm('This will reset the 30 period slots (6 periods × 5 days) and clear all existing timetable entries. Continue?')) return;
+    genLog('⚙️ Setting up meeting times (6 periods × 5 days)...');
+    try {
+        const resp = await fetch('/api/setup-meeting-times/', {
+            method: 'POST', headers: { 'X-CSRFToken': CSRF }
+        });
+        const data = await resp.json();
+        if (data.success) {
+            genLog(`✅ ${data.message}`, '#86efac');
+        } else {
+            genLog(`❌ ${data.message}`, '#fca5a5');
+        }
+    } catch(e) {
+        genLog(`❌ Network error: ${e.message}`, '#fca5a5');
+    }
+}
+
+/* ===== Generate Lecture Schedule ===== */
+async function generateSchedule() {
+    // Collect selected sections
+    const checks = document.querySelectorAll('#section-checkboxes input[type=checkbox]:checked');
+    const sectionIds = Array.from(checks).map(c => c.value);
+    if (!sectionIds.length) { alert('⚠️ Please select at least one section.'); return; }
+
+    const lpw = parseInt(document.getElementById('lpw-value').value) || 3;
+    const btn = document.getElementById('gen-btn');
+
+    btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.4);border-top-color:white"></span> Generating...';
+    btn.disabled = true;
+
+    // Clear log
+    document.getElementById('gen-log').innerHTML = '';
+    document.getElementById('gen-log-wrap').style.display = 'block';
+
+    // Step 1: Setup meeting times
+    genLog('⚙️ Step 1/2 — Setting up 30 time slots (6 periods × 5 days)...');
+    try {
+        const r1 = await fetch('/api/setup-meeting-times/', {
+            method: 'POST', headers: { 'X-CSRFToken': CSRF }
+        });
+        const d1 = await r1.json();
+        if (d1.success) {
+            genLog(`  ✅ ${d1.message}`, '#86efac');
+        } else {
+            genLog(`  ❌ Setup failed: ${d1.message}`, '#fca5a5');
+            btn.innerHTML = '⚡ Generate Lecture Schedule'; btn.disabled = false; return;
+        }
+    } catch(e) {
+        genLog(`  ❌ Network error during setup: ${e.message}`, '#fca5a5');
+        btn.innerHTML = '⚡ Generate Lecture Schedule'; btn.disabled = false; return;
+    }
+
+    // Step 2: Generate
+    genLog(`⚡ Step 2/2 — Generating schedules for: ${sectionIds.join(', ')} (${lpw} lectures/week)...`);
+    try {
+        const r2 = await fetch('/generate/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ section_ids: sectionIds, lectures_per_week: lpw })
+        });
+        const d2 = await r2.json();
+
+        if (d2.success) {
+            const lunch = d2.lunch_period ? ` | 🍽 Lunch: ${d2.lunch_period}` : '';
+            genLog(`🎉 Done! Created ${d2.created} entries (Batch: ${d2.batch_id}${lunch})`, '#86efac');
+            if (d2.warnings && d2.warnings.length) {
+                d2.warnings.slice(1).forEach(w => genLog(`  ⚠️ ${w}`, '#fcd34d'));  // skip first (lunch info)
+            }
+            genLog(`↪ Redirecting to timetable view...`, '#a5f3fc');
+            setTimeout(() => { window.location.href = d2.redirect_url; }, 1800);
+        } else {
+            genLog(`❌ Generation failed: ${d2.message}`, '#fca5a5');
+            if (d2.errors) d2.errors.forEach(e => genLog(`  • ${e}`, '#fca5a5'));
+            if (d2.detail) genLog(d2.detail.substring(0, 400), '#f87171');
+        }
+    } catch(e) {
+        genLog(`❌ Network error: ${e.message}`, '#fca5a5');
+    }
+
+    btn.innerHTML = '⚡ Generate Lecture Schedule';
+    btn.disabled = false;
+}
+</script>
+
+
+{% endblock %}

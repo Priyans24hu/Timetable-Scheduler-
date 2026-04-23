@@ -4,23 +4,60 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save, post_delete
 
 
+# College timing: 9:05 AM – 4:25 PM
+# 8 periods of 55 min each = 440 min = 7h 20m
+# ONE period within 12:00–2:00 is chosen as the lunch break at schedule-generation time
 TIME_SLOTS = (
-    ('8:45 - 9:45'  , '8:45 - 9:45'),
-    ('10:00 - 11:00', '10:00 - 11:00'),
-    ('11:00 - 12:00', '11:00 - 12:00'),
-    ('1:00 - 2:00'  , '1:00 - 2:00'),
-    ('2:15 - 3:15'  , '2:15 - 3:15'),
+    ('9:05 - 10:00',   'Period 1  (9:05 – 10:00)'),
+    ('10:00 - 10:55',  'Period 2  (10:00 – 10:55)'),
+    ('10:55 - 11:50',  'Period 3  (10:55 – 11:50)'),
+    ('11:50 - 12:45',  'Period 4  (11:50 – 12:45)  ← Lunch Candidate A'),
+    ('12:45 - 1:40',   'Period 5  (12:45 – 1:40)   ← Lunch Candidate B'),
+    ('1:40 - 2:35',    'Period 6  (1:40 – 2:35)'),
+    ('2:35 - 3:30',    'Period 7  (2:35 – 3:30)'),
+    ('3:30 - 4:25',    'Period 8  (3:30 – 4:25)'),
 )
 
-# TIME_SLOTS = (
-#     ('9:30 - 10:30', '9:30 - 10:30'),
-#     ('10:30 - 11:30', '10:30 - 11:30'),
-#     ('11:30 - 12:30', '11:30 - 12:30'),
-#     ('12:30 - 1:30', '12:30 - 1:30'),
-#     ('2:30 - 3:30', '2:30 - 3:30'),
-#     ('3:30 - 4:30', '3:30 - 4:30'),
-#     ('4:30 - 5:30', '4:30 - 5:30'),
-# )
+# Chronological order used by the scheduler
+PERIOD_ORDER = [
+    '9:05 - 10:00',
+    '10:00 - 10:55',
+    '10:55 - 11:50',
+    '11:50 - 12:45',   # Lunch candidate A (spans 12:00–12:45)
+    '12:45 - 1:40',    # Lunch candidate B (spans 12:45–1:40)
+    '1:40 - 2:35',
+    '2:35 - 3:30',
+    '3:30 - 4:25',
+]
+
+# Exactly ONE of these is picked as the lunch period per generation run
+# (whichever leaves fewer scheduling conflicts)
+LUNCH_CANDIDATES = [
+    '11:50 - 12:45',   # Candidate A — straddles 12:00, entirely within 12:00–2:00 window
+    '12:45 - 1:40',    # Candidate B — entirely within 12:00–2:00 window
+]
+
+# Consecutive period pairs eligible for 2-hour lab blocks
+# (lunch candidates are excluded from both slots of a lab pair)
+CONSECUTIVE_LAB_PAIRS_FULL = [
+    ('9:05 - 10:00',  '10:00 - 10:55'),   # Morning  A
+    ('10:00 - 10:55', '10:55 - 11:50'),   # Morning  B
+    ('10:55 - 11:50', '11:50 - 12:45'),   # Morning  C (only if 11:50-12:45 not chosen as lunch)
+    ('12:45 - 1:40',  '1:40 - 2:35'),     # Post-lunch A (only if 12:45-1:40 not lunch)
+    ('1:40 - 2:35',   '2:35 - 3:30'),     # Afternoon A
+    ('2:35 - 3:30',   '3:30 - 4:25'),     # Afternoon B
+]
+
+# Safe lab pairs that NEVER involve a lunch candidate slot
+CONSECUTIVE_LAB_PAIRS = [
+    ('9:05 - 10:00',  '10:00 - 10:55'),   # Morning  A
+    ('10:00 - 10:55', '10:55 - 11:50'),   # Morning  B
+    ('1:40 - 2:35',   '2:35 - 3:30'),     # Afternoon A
+    ('2:35 - 3:30',   '3:30 - 4:25'),     # Afternoon B
+]
+
+LUNCH_BREAK_LABEL = '1 hr within 12:00–2:00 (chosen at generation time)'
+
 
 DAYS_OF_WEEK = (
     ('Monday', 'Monday'),

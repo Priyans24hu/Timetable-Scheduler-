@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load index %}
 
 {% block content %}
 
@@ -351,7 +352,7 @@
 
     <!-- Actions -->
     <div style="margin-top: 25px; text-align: center;">
-        <a href="{% url 'timetable_stored' %}" class="btn btn-primary" style="padding: 12px 25px; margin-right: 10px;">📅 View Timetable</a>
+        <a href="{% url 'view_stored_timetable' %}" class="btn btn-primary" style="padding: 12px 25px; margin-right: 10px;">📅 View Timetable</a>
         <button onclick="trainModel()" class="btn btn-secondary" style="padding: 12px 25px;">🤖 Train AI Model</button>
     </div>
 </div>

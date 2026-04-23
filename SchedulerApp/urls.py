@@ -51,13 +51,14 @@ urlpatterns = [
     
     # INTELLIGENT EDITING SYSTEM API ENDPOINTS
     path('api/check-conflict/', api_check_conflict, name='api_check_conflict'),
-    path('api/suggest', api_suggest, name='api_suggest'),
+    path('api/suggest/', api_suggest, name='api_suggest'),
     path('api/quick-fix/<int:entry_id>/', api_quick_fix, name='api_quick_fix'),
     path('api/update-entry/<int:entry_id>/', api_update_entry, name='api_update_entry'),
-    path('api/auto-fix', api_auto_fix, name='api_auto_fix'),
-    path('api/toggle-lock/<int:entry_id>', api_toggle_lock, name='api_toggle_lock'),
+    path('api/auto-fix/', api_auto_fix, name='api_auto_fix'),
+    path('api/auto-fix', api_auto_fix, name='api_auto_fix_noslash'),  # Support both with and without slash
+    path('api/toggle-lock/<int:entry_id>/', api_toggle_lock, name='api_toggle_lock'),
     path('api/validate-all/', api_validate_all, name='api_validate_all'),
-    path('api/conflict-summary', api_get_conflict_summary, name='api_conflict_summary'),
+    path('api/conflict-summary/', api_get_conflict_summary, name='api_conflict_summary'),
     
     # BATCH ACTION API ENDPOINTS - Task 10
     path('api/batch-lock/', api_batch_lock, name='api_batch_lock'),
@@ -71,4 +72,13 @@ urlpatterns = [
     # PREFERENCE HEATMAP - Task 9
     path('preference-heatmap/', preference_heatmap_view, name='preference_heatmap'),
     path('api/preference-heatmap/', api_preference_heatmap, name='api_preference_heatmap'),
+
+    # IMPORT DATA - website-based data entry
+    path('import/', import_data_view, name='import_data'),
+    path('api/import-csv/', api_import_csv, name='api_import_csv'),
+    path('api/add-entry/', api_add_manual_entry, name='api_add_manual_entry'),
+
+    # SMART SCHEDULE GENERATION
+    path('generate/', generate_timetable_view, name='generate_timetable'),
+    path('api/setup-meeting-times/', api_setup_meeting_times, name='api_setup_meeting_times'),
 ]

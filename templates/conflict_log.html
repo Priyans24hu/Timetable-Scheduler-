@@ -165,6 +165,7 @@
     padding: 15px;
     border-bottom: 1px solid #e2e8f0;
     font-size: 14px;
+    vertical-align: middle;
 }
 
 .conflict-table tr:hover {
@@ -198,19 +199,46 @@
 }
 
 /* Conflict Type */
-.conflict-type {
+.conflict-type-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #edf2f7;
+    color: #4a5568;
 }
 
-.conflict-type.hard {
-    color: #e74c3c;
+.conflict-type-badge.room_conflict {
+    background: #fee2e2;
+    color: #dc2626;
 }
 
-.conflict-type.soft {
-    color: #f39c12;
+.conflict-type-badge.faculty_conflict {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.conflict-type-badge.section_conflict {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.conflict-type-badge.capacity_violation {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.conflict-type-badge.same_course_same_day {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.conflict-type-badge.consecutive_classes {
+    background: #fce7f3;
+    color: #be185d;
 }
 
 /* Action Buttons */
@@ -268,7 +296,7 @@
 }
 
 /* Pagination */
-.pagination {
+.pagination-bar {
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -276,7 +304,7 @@
     background: #f7fafc;
 }
 
-.pagination button {
+.pagination-bar button {
     padding: 8px 16px;
     border: 2px solid #e2e8f0;
     background: white;
@@ -285,14 +313,27 @@
     font-weight: 500;
 }
 
-.pagination button.active {
+.pagination-bar button.active {
     background: #667eea;
     color: white;
     border-color: #667eea;
 }
 
-.pagination button:hover:not(.active) {
+.pagination-bar button:hover:not(.active) {
     background: #edf2f7;
+}
+
+/* Entry Info cell */
+.entry-info-cell {
+    line-height: 1.6;
+}
+.entry-info-cell .entry-main {
+    font-weight: 600;
+    color: #2d3748;
+}
+.entry-info-cell .entry-sub {
+    font-size: 12px;
+    color: #718096;
 }
 </style>
 
@@ -333,18 +374,15 @@
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="resolved">Resolved</option>
-            <option value="critical">Critical</option>
         </select>
         <select id="type-filter" onchange="filterConflicts()">
             <option value="">All Types</option>
-            <option value="hard">Hard Constraint</option>
-            <option value="soft">Soft Constraint</option>
-        </select>
-        <select id="severity-filter" onchange="filterConflicts()">
-            <option value="">All Severities</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="room_conflict">Room Conflict</option>
+            <option value="faculty_conflict">Faculty Conflict</option>
+            <option value="section_conflict">Section Conflict</option>
+            <option value="capacity_violation">Capacity Issue</option>
+            <option value="same_course_same_day">Same Course Same Day</option>
+            <option value="consecutive_classes">Consecutive Classes</option>
         </select>
         <input type="date" id="date-filter" onchange="filterConflicts()">
         <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
@@ -361,7 +399,7 @@
                     <th>Type</th>
                     <th>Entry</th>
                     <th>Description</th>
-                    <th>Severity</th>
+                    <th>Conflicting With</th>
                     <th>Status</th>
                     <th>Detected</th>
                     <th>Actions</th>
@@ -369,33 +407,56 @@
             </thead>
             <tbody>
                 {% for conflict in conflicts %}
-                <tr data-status="{{ conflict.status }}" data-type="{{ conflict.conflict_type }}" data-severity="{{ conflict.severity }}">
-                    <td>#{{ conflict.id }}</td>
+                <tr data-status="{% if conflict.is_resolved %}resolved{% else %}pending{% endif %}" data-type="{{ conflict.conflict_type }}">
+                    <td>#{{ conflict.conflict_id }}</td>
                     <td>
-                        <span class="conflict-type {{ conflict.conflict_type }}">
-                            {{ conflict.conflict_type|title }} Constraint
+                        <span class="conflict-type-badge {{ conflict.conflict_type }}">
+                            {% if conflict.conflict_type == 'room_conflict' %}🏛️ Room Conflict
+                            {% elif conflict.conflict_type == 'faculty_conflict' %}👨‍🏫 Faculty Conflict
+                            {% elif conflict.conflict_type == 'section_conflict' %}📚 Section Conflict
+                            {% elif conflict.conflict_type == 'capacity_violation' %}💺 Capacity Issue
+                            {% elif conflict.conflict_type == 'same_course_same_day' %}📅 Same Course/Day
+                            {% elif conflict.conflict_type == 'consecutive_classes' %}⏱️ Consecutive Classes
+                            {% else %}{{ conflict.conflict_type|title }}{% endif %}
                         </span>
                     </td>
                     <td>
-                        {{ conflict.entry.section.section_id }} - {{ conflict.entry.course.course_name }}
+                        {% if conflict.entry %}
+                        <div class="entry-info-cell">
+                            <div class="entry-main">{{ conflict.entry.section.section_id }} - {{ conflict.entry.course.course_name }}</div>
+                            <div class="entry-sub">{{ conflict.entry.instructor.name }} | {{ conflict.entry.meeting_time }}</div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted">Entry removed</span>
+                        {% endif %}
                     </td>
-                    <td>{{ conflict.description }}</td>
+                    <td>{{ conflict.message }}</td>
                     <td>
-                        <span class="badge {{ conflict.severity }}">
-                            {{ conflict.severity|title }}
-                        </span>
+                        {% if conflict.conflicting_entry %}
+                        <div class="entry-info-cell">
+                            <div class="entry-main">{{ conflict.conflicting_entry.section.section_id }}</div>
+                            <div class="entry-sub">{{ conflict.conflicting_entry.course.course_name }}</div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
                     <td>
-                        <span class="badge {{ conflict.status }}">
-                            {% if conflict.status == 'resolved' %}✅ Resolved{% else %}⏳ Pending{% endif %}
+                        <span class="badge {% if conflict.is_resolved %}resolved{% else %}pending{% endif %}">
+                            {% if conflict.is_resolved %}✅ Resolved{% else %}⏳ Pending{% endif %}
                         </span>
+                        {% if conflict.is_resolved and conflict.resolution_method %}
+                        <br><small class="text-muted">via {{ conflict.resolution_method }}</small>
+                        {% endif %}
                     </td>
                     <td>{{ conflict.detected_at|date:"M d, Y H:i" }}</td>
                     <td>
                         <div class="action-btns">
-                            <button class="view-btn" onclick="viewConflict({{ conflict.id }})">View</button>
-                            {% if conflict.status == 'pending' %}
-                            <button class="resolve-btn" onclick="resolveConflict({{ conflict.id }})">Resolve</button>
+                            {% if conflict.entry %}
+                            <button class="view-btn" onclick="viewConflict({{ conflict.conflict_id }})">View</button>
+                            {% endif %}
+                            {% if not conflict.is_resolved %}
+                            <button class="resolve-btn" onclick="resolveConflict({{ conflict.conflict_id }})">Resolve</button>
                             {% endif %}
                         </div>
                     </td>
@@ -414,7 +475,7 @@
 
     <!-- Quick Actions -->
     <div style="margin-top: 25px; text-align: center;">
-        <a href="{% url 'timetable_stored' %}" class="btn btn-primary" style="padding: 12px 25px; margin-right: 10px;">📅 View Timetable</a>
+        <a href="{% url 'view_stored_timetable' %}" class="btn btn-primary" style="padding: 12px 25px; margin-right: 10px;">📅 View Timetable</a>
         <button onclick="autoFixAll()" class="btn btn-danger" style="padding: 12px 25px;">🔧 Auto-Fix All</button>
     </div>
 </div>
@@ -423,18 +484,15 @@
 function filterConflicts() {
     const status = document.getElementById('status-filter').value;
     const type = document.getElementById('type-filter').value;
-    const severity = document.getElementById('severity-filter').value;
-    const date = document.getElementById('date-filter').value;
-    
+
     const rows = document.querySelectorAll('.conflict-table tbody tr');
-    
+
     rows.forEach(row => {
         let show = true;
-        
+
         if (status && row.dataset.status !== status) show = false;
         if (type && row.dataset.type !== type) show = false;
-        if (severity && row.dataset.severity !== severity) show = false;
-        
+
         row.style.display = show ? '' : 'none';
     });
 }
@@ -447,7 +505,6 @@ function applyFilters() {
 function clearFilters() {
     document.getElementById('status-filter').value = '';
     document.getElementById('type-filter').value = '';
-    document.getElementById('severity-filter').value = '';
     document.getElementById('date-filter').value = '';
     filterConflicts();
 }
@@ -459,9 +516,9 @@ function viewConflict(conflictId) {
 
 function resolveConflict(conflictId) {
     if (!confirm('Mark this conflict as resolved?')) return;
-    
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
     fetch(`/api/conflict/${conflictId}/resolve/`, {
         method: 'POST',
         headers: {
@@ -486,9 +543,9 @@ function resolveConflict(conflictId) {
 
 function autoFixAll() {
     if (!confirm('This will attempt to auto-fix all pending conflicts. Continue?')) return;
-    
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-    
+
+    const csrfToken = getCookie('csrftoken');
+
     fetch('/api/auto-fix', {
         method: 'POST',
         headers: {
@@ -500,7 +557,7 @@ function autoFixAll() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification(`Auto-fix applied! Resolved ${data.resolved_count || 'some'} conflicts.`, 'success');
+            showNotification(`Auto-fix applied! Resolved ${data.resolved_count || data.fixed_count || 'some'} conflicts.`, 'success');
             setTimeout(() => window.location.reload(), 1500);
         } else {
             showNotification(data.message || 'Auto-fix could not resolve all conflicts', 'warning');
@@ -512,10 +569,25 @@ function autoFixAll() {
     });
 }
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function showNotification(message, type) {
     const notif = document.createElement('div');
     notif.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
-    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px;';
+    notif.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 4px; min-width: 250px;';
     notif.textContent = message;
     document.body.appendChild(notif);
     setTimeout(() => notif.remove(), 3000);
